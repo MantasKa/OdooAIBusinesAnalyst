@@ -1,0 +1,765 @@
+Odoo 18 Manufacturing Module User Manual
+Installation and Initial Setup
+
+To get started with the Manufacturing module in Odoo 18, install the Manufacturing app from the Apps menu. Once installed, you can configure basic settings in Manufacturing ‣ Configuration ‣ Settings. For example, if you plan to use detailed work orders, enable the Work Orders feature
+odoo.com
+. This will allow defining operations in Bills of Materials and using the work center control panel on the shop floor. Additionally, ensure any other needed sub-modules (Quality, Maintenance, PLM, etc.) are installed for full integration with manufacturing processes
+cybrosys.com
+(e.g. install the Quality app to manage quality control within manufacturing).
+
+Next, configure your products for manufacturing. On each product that you produce, go to the Inventory tab of the product form and activate the Manufacture route
+odoo.com
+. This tells Odoo the product can be manufactured in-house. You will also need to create a Bill of Materials (BoM) for each manufactured product (covered in the next section). Once a product has the Manufacture route enabled and a BoM defined, it becomes selectable in Manufacturing Orders
+odoo.com
+odoo.com
+.
+
+If you use lot or serial number tracking for finished products, configure that on the product as well (in the Traceability section). Assigning a tracking mode (By Lot or By Unique Serial Number) will enable lot/serial fields on Manufacturing Orders
+odoo.com
+. This is optional but useful for traceability of production.
+
+Warehouse Manufacturing Steps: By default, Odoo can handle manufacturing in one step, but you can configure up to three steps for more control. This is set per warehouse: go to Inventory ‣ Configuration ‣ Warehouses, and on the Warehouse form under Manufacture, choose the flow – 1 step (Manufacture in one step), 2 steps (Pick components, then manufacture), or 3 steps (Pick components, then manufacture, then store products)
+odoo.com
+odoo.com
+. One-step manufacturing means no separate stock transfers for components or finished goods (inventory is updated upon MO completion)
+odoo.com
+, whereas two- or three-step flows generate picking orders for components and/or put-away orders for finished products for more granular inventory control.
+
+Finally, review Manufacturing Settings for any other options needed. For example, you can enable features like By-products, Master Production Schedule, or Subcontracting under the Settings if relevant to your operations. These will be discussed in later sections. After initial setup, you’re ready to define BoMs and launch manufacturing orders.
+Creating and Managing Bill of Materials (BoMs)
+
+A Bill of Materials (BoM) is a blueprint that lists all components (materials) and operations needed to manufacture a product. In Odoo 18, BoMs can also include sub-assemblies (multi-level BoMs), versions (via the PLM module), and documentation of operations.
+Creating a BoM
+
+To create a BoM, go to Manufacturing ‣ Products ‣ Bills of Materials and click New
+odoo.com
+. Select the Product that this BoM is for, and set the BoM Type to “Manufacture this Product” (for a standard manufacturing BoM)
+odoo.com
+. In the Components tab, add all the raw materials or parts required, with their quantities per production
+odoo.com
+odoo.com
+. You can quickly pick existing products or create new component items on the fly. If your product has variants and certain components apply only to specific variants, you can enable the Apply on Variants column to specify that
+odoo.com
+odoo.com
+(leave blank to use the component for all variants).
+
+If using work orders, switch to the Operations tab of the BoM (visible only if Work Orders are enabled in settings)
+odoo.com
+. Here you can define the processing steps (operations) for manufacturing the product. For each operation, you specify the Operation name (e.g., Assembly, Painting), the Work Center where it will be performed, and an optional duration or description
+odoo.com
+odoo.com
+. Work centers are defined resources like machines or production lines (covered later). You can also attach work instructions or worksheets for each operation. When you add operations, Odoo will generate corresponding Work Orders for each Manufacturing Order of this product, allowing you to track each step.
+
+Tip: You can also create or access a BoM directly from a product form via the Bill of Materials smart button
+odoo.com
+odoo.com
+. This is a shortcut to see or add BoMs related to that product.
+
+After adding components (and operations if applicable), save the BoM. Now Odoo knows the recipe to produce the product, including how many of each component is consumed and what work needs to be done.
+Multi-Level BoMs (Sub-assemblies)
+
+For complex products made of sub-assemblies, Odoo supports multi-level BoMs. A multi-level BoM is essentially a BoM that includes other manufactured products as components (sub-assemblies). Use a multi-level BoM when a manufactured sub-component is built separately and then used in a parent product
+odoo.com
+odoo.com
+. In such cases, you will have a BoM for the sub-assembly and another BoM for the final product that lists the sub-assembly as a component.
+
+Multi-level BoMs help organize complex production and allow reusing the same sub-assembly in multiple finished products
+odoo.com
+odoo.com
+. For example, if you manufacture a bicycle, you might have a BoM for the wheel assembly (rim, spokes, tire) and another BoM for the final bicycle that includes 2 wheel assemblies, frame, seat, etc. This way, the wheel’s BoM can be managed and produced independently.
+
+When setting up multi-level BoMs, it’s recommended to build from the bottom up: create BoMs for the lowest-level components first, then for subassemblies that use those, and finally the top-level product
+odoo.com
+odoo.com
+. In Odoo, confirm that each sub-assembly product is marked as manufacturable (Manufacture route) and has its own BoM. Then include those sub-assembly products in the parent BoM’s component list. The system will nest the BoMs accordingly.
+
+Planning for Multi-level: Ensure you plan the production or procurement of sub-assemblies to avoid bottlenecks. Odoo’s replenishment rules or routes can help here. For instance, you can set reordering rules for sub-assemblies with zero minimum stock to auto-trigger their manufacturing when needed
+odoo.com
+odoo.com
+. Alternatively, use MTO (Make To Order): on each sub-assembly product, enable Replenish on Order (MTO) along with the Manufacture route, so that when a top-level MO is confirmed, Odoo automatically generates MOs for any sub-assemblies not in stock
+odoo.com
+odoo.com
+. (Using reordering rules is generally recommended as a more flexible approach, since MTO links demand strictly and can reserve stock, whereas reordering allows more dynamic allocation
+odoo.com
+.)
+
+Why plan sub-assemblies carefully? Without proper planning, missing components or unfinished sub-assemblies can halt your production and delay orders. Good replenishment planning ensures just-in-time availability, automates procurement, and keeps production flowing smoothly
+odoo.com
+. Always manufacture or procure sub-assembly items before starting the final assembly MO; Odoo will indicate an MO’s component availability status to help you check this
+odoo.com
+.
+BoM Versions and Engineering Changes
+
+In standard Odoo, you can have multiple BoMs for a product (for example, one BoM per variant or alternate production methods), but managing revisions to a BoM (versions) is handled via the Product Lifecycle Management (PLM) module. With PLM installed, each BoM form will show a Version field and an ECO (Engineering Change Order) smart button for version control
+odoo.com
+odoo.com
+.
+
+Using PLM, you can create an ECO for any BoM changes: the ECO captures the new version of the BoM (changed components, quantities, or operations) and, when applied, updates the production BoM to the new version while keeping a record of the old version
+odoo.com
+odoo.com
+. This allows you to store and retrieve previous BoM versions without affecting current production – useful for traceability (e.g., if you need to know which version was used for a batch of products in case of quality issues or recalls)
+odoo.com
+. You can see the current active BoM version on the BoM form (Miscellaneous tab) and view the version history by clicking the ECO smart button, which lists all past ECOs (with their effective dates and the user who applied them)
+odoo.com
+odoo.com
+.
+
+Best practice: Implement PLM for formal version control if your manufacturing process undergoes engineering changes. It provides an organized way to test changes in a separate ECO (sandbox) and then apply them to create a new BoM version without disrupting ongoing operations
+odoo.com
+odoo.com
+. Each ECO can also manage attachments (drawings, CAD files, etc.) related to the BoM, ensuring design documents are versioned alongside the BoM
+odoo.com
+odoo.com
+.
+Creating and Executing Manufacturing Orders (MOs)
+
+A Manufacturing Order (MO) is the work order or job order to produce a certain quantity of a product. Once your products and BoMs are set up, you can create MOs to carry out production.
+
+To create a new MO, go to Manufacturing ‣ Operations ‣ Manufacturing Orders and click New
+odoo.com
+odoo.com
+. On the MO form, select the Product to produce and enter the Quantity to manufacture. The BoM will auto-populate if there’s only one BoM for the product. If multiple BoMs exist (e.g., variant-specific BoMs or alternate BoMs), choose the appropriate Bill of Materials from the dropdown – the Product field will then update accordingly
+odoo.com
+odoo.com
+. Once a BoM is selected, the Components tab will list all required materials and their quantities, and the Work Orders or Operations tab (if work orders are used) will list the operations to perform, all pulled from the BoM definition
+odoo.com
+odoo.com
+. You can still adjust the MO if needed – for example, add a one-off component or operation specific to this order – by clicking Add a line in the respective tab.
+
+When ready, click Confirm to confirm the manufacturing order
+odoo.com
+. This reserves the needed components in inventory for this MO (or generates component picking transfers if using a multi-step process). If the required components are not available, the MO’s status may show as Waiting Materials, and you should procure those items (Odoo can automate this via reordering rules or triggers, as discussed later).
+
+Material Consumption: In a one-step manufacturing scenario, confirming the MO doesn’t create separate stock moves to withdraw components; you will consume components when you mark production done. In a multi-step (2 or 3-step) scenario, confirming the MO will generate a related picking operation – a Pick Components transfer – to move the required components from stock to the production location
+odoo.com
+odoo.com
+. You can view these transfers via the Transfers smart button on the MO
+odoo.com
+. For example, in a 3-step setup, you’ll see a picking labeled “WH/PC/####” for components and later a “WH/SFP/####” for storing finished products
+odoo.com
+. Process the component picking by validating that transfer (which deducts the components from inventory) before completing the MO
+odoo.com
+.
+
+Executing the MO (Work Orders): To manufacture the product, you need to complete the work orders (operations) defined. If you are not using the Work Orders feature (simple BoM with no operations), you can directly produce the quantity. In most cases with operations, you’ll have one or more work orders listed on the MO under the Work Orders tab.
+
+From the MO form, under Work Orders, click Start on the first operation when you’re ready to begin that task
+odoo.com
+odoo.com
+. This can be done either on the MO form (in the list of work orders) or via the Shop Floor tablet interface (see next section). Starting a work order will trigger a timer to track how long that operation takes if using timed operations
+odoo.com
+odoo.com
+. Once the operation is finished, click Done for that work order to mark it completed
+odoo.com
+. Repeat for each subsequent operation/work order in sequence. Odoo will enforce the sequence if some operations depend on others finishing (and you can define overlap or parallelism via Work Order Dependencies if advanced routing is needed).
+
+Shop Floor interface: Odoo 18 provides a dedicated Shop Floor module for work order execution on the shop floor (usually accessed via tablets or shopfloor terminals). From an MO’s Work Orders tab, you can click the arrow icon (↗️) next to a work order and choose Open Shop Floor
+odoo.com
+odoo.com
+. This launches the Shop Floor app focused on the relevant work center and operation. Operators will see a card with the operation steps and can step through them, mark steps as done, record production, and even trigger quality or maintenance actions if issues arise
+odoo.com
+odoo.com
+. For instance, the final step of each operation card is Register Production, where the operator enters how many units were produced in that step (if it matches the MO total, they can just confirm the full quantity)
+odoo.com
+. Once all steps in an operation are completed, the operator will click Mark as Done, and the system will automatically move to the next operation or, if it was the last, allow closing the production
+odoo.com
+odoo.com
+. The Shop Floor interface thus provides real-time production tracking and the ability for workers to log production data, trigger quality checks, or raise maintenance requests (via “Block” or “Maintenance” buttons if equipment issues occur)
+odoo.com
+.
+
+Finishing the MO: After all work orders are marked done (or if none, once ready to finish), record the production of the final product. In one-step flows, you can click Produce (Produce All) on the MO to mark the products as manufactured and in stock
+odoo.com
+odoo.com
+. In multi-step flows, after completing work orders, you’ll also validate the “Store Finished Products” transfer to move the new products into inventory. Once done, the MO state becomes Done, and Odoo creates the appropriate inventory moves: components are consumed from their source locations and the finished product quantity is added to stock.
+
+If you produced less or more than planned, Odoo will handle it via backorders or adjustments. For example, if you could only produce 8 out of 10 units due to some issue and mark the MO done with 8 units, Odoo will ask if you want to create a backorder for the remaining 2 units or scrap them. A backorder is essentially a new MO for the remaining quantity
+odoo.com
+(with a reference to the original), allowing you to complete production later. This ensures nothing “vanishes” – you either fulfill the full requested quantity or explicitly record the shortfall as scrapped output.
+Planning, Scheduling, and Tracking Work Orders
+
+Work orders are the tasks or operations in a production process, usually executed at specific work centers. Efficient planning and tracking of work orders is crucial for on-time production.
+
+Scheduling with Work Centers: Each work order is assigned to a Work Center (a production resource). Work Centers in Odoo have a defined capacity and working hours which drive the schedule. When you create operations in a BoM, you select a Work Center for each operation
+odoo.com
+odoo.com
+. Odoo will schedule the work orders based on the work center’s availability and the sequence of operations. For example, if Work Center A can do 8 hours a day, and you have two 5-hour operations in queue, one will start after the other or possibly parallel if another center is free.
+
+You can view and manage the schedule of work orders by going to Manufacturing ‣ Operations ‣ Work Orders. This list shows all active work orders, their status, and associated MOs. Use filters or the calendar view to see what’s planned for each work center. If a work center is overbooked or unavailable (maybe due to maintenance or time off), you may need to adjust schedules or use alternative work centers (which can be defined in the work center configuration).
+
+Work Center Time Off: In case a work center is temporarily unavailable (maintenance, breakdown, or planned downtime), you can record a time off on that work center. This is done in the Maintenance module or via the work center form, indicating a period where no work orders should be scheduled
+odoo.com
+. Odoo will then avoid assigning work in that period or mark those hours as not working. This helps to realistically plan production around downtime.
+
+Master Production Schedule (MPS): Odoo 18 introduces a Master Production Schedule for high-level planning. If enabled (under Manufacturing settings), the MPS allows planners to set forecasted demand for products by week or month and then manually plan manufacturing or purchasing to meet that forecast
+odoo.com
+. Using MPS, you can see projected inventory, and create planned orders ahead of actual demand. While MPS is a bit outside the basic manufacturing flow, it’s a powerful tool for production planning: you input expected sales or targets, and it will suggest how many to produce or purchase to meet those in advance. (MPS in Odoo 18 can even trigger replenishments automatically based on the forecasts, ensuring a smooth supply chain
+erpgap.com
+.)
+
+Tracking Work Order Progress: As work orders are processed (either via the MO interface or Shop Floor), Odoo logs the start and finish times, duration, and who processed it. You can monitor this in real-time. For example, supervisors can open the Work Orders menu to see which operations are In Progress (timers running) and which are Done or Pending. If using the Shop Floor app, the status updates live as operators click through steps.
+
+Each work order, once done, can be reviewed to see actual time vs expected time. This helps in tracking efficiency and identifying bottlenecks (e.g., an operation consistently taking longer than expected might indicate an issue with that work center or the estimate).
+
+Odoo also supports work order dependencies: if some operations can only start after others are finished (within the same MO), the system enforces that sequence. In more complex cases, you might have parallel operations on different work centers – you can configure those by not linking them as sequential, so they can run concurrently if resources allow. The Gantt view in the Operations scheduling (if you have Gantt view in enterprise) can show these relationships for a visual schedule.
+
+In summary, Odoo’s manufacturing manages scheduling mostly automatically once you set up work centers’ capacities and BoM operations. It will respect working hours, sequence constraints, and resource availability. For day-to-day execution, the Work Orders list and calendar give a view of what needs to be done and when, while the Shop Floor interface ensures work can be tracked and recorded efficiently on the production floor.
+Configuration and Use of Work Centers and Routings
+
+A Work Center represents a physical location, machine, or labor unit where operations are carried out. Configuring work centers properly is key to accurate scheduling and costing.
+
+To create or configure a work center, go to Manufacturing ‣ Configuration ‣ Work Centers and click New. You’ll fill in details such as the Work Center Name, Alternative Work Centers, Tag (for categorization), and Code (an identifier)
+odoo.com
+odoo.com
+. More importantly, set the Working Hours for this center – by default, Odoo uses a 40 hours/week schedule (e.g., 8 AM–5 PM Mon-Fri)
+odoo.com
+. If your work center operates in different shifts or hours, you can assign or create a specific Working Hours calendar (e.g., 24/7 operation or night shifts). These hours determine when Odoo considers the work center available for scheduling jobs.
+
+Work centers also have a General Information tab where you set productivity and costing parameters
+odoo.com
+:
+
+    Time Efficiency: This is a factor for how fast or slow this work center is relative to the standard time. 100% means it works at expected speed. If a work center is slower (older machine), you might set 50%, meaning tasks take twice as long there
+    odoo.com
+    . Conversely, >100% could mean faster than standard. Odoo uses this to adjust expected durations of work orders at this center.
+
+    Capacity: How many units can be processed at once in this work center. Default is 1 (one job at a time). If a work center can handle multiple products in parallel (e.g., an oven that bakes 10 items at once), set capacity to that number
+    odoo.com
+    odoo.com
+    . You can even define Specific Capacities per product if needed (some products might be produced in batches of a different size)
+    odoo.com
+    .
+
+    OEE Target: Overall Equipment Effectiveness target percentage. This is a goal for how much of the available time the work center should be producing (used for performance tracking)
+    odoo.com
+    . For example, if a work center is available 8 hours but you expect it to run 7 hours on average, target ~87.5%
+    odoo.com
+    . OEE will be calculated based on actual usage versus available time.
+
+    Setup Time and Cleanup Time: Fixed times (in minutes) needed before and after a work order at this center. Odoo will add these to scheduling and cost calculations
+    odoo.com
+    odoo.com
+    .
+
+    Cost per Hour: The cost rate of this work center (e.g., machine cost or labor cost per hour). You can also specify a cost per unit if using employees (like cost per hour per worker) but in v18 the work center cost is generally per hour of operation
+    odoo.com
+    odoo.com
+    . Odoo will use this to compute operation costs on manufacturing orders.
+
+    Allowed Employees: If only certain workers can operate this machine (perhaps requiring certification), you can list those employees. Otherwise leave blank to allow all
+    odoo.com
+    odoo.com
+    . This is more for information; it doesn’t automatically restrict assignment but is useful for managers to know who is qualified.
+
+Once work centers are set up, you incorporate them into BoM operations (this essentially defines your routing – the sequence of work centers/operations for production). When you create an operation in a BoM, choose the Work Center and set the operation time (or leave it to be computed from time tracker)
+odoo.com
+odoo.com
+. The routing is implicitly the list of operations with their work centers and sequence as per the BoM.
+
+Alternate Work Centers: In each work center form, you can specify Alternative Work Centers (a list). This is to indicate if the primary center is unavailable, an alternate could be used for the operation
+odoo.com
+. It’s mainly informational; Odoo won’t automatically re-route work orders, but a planner could manually swap to an alternate by editing the work order’s work center if needed.
+
+IoT and Automation in Work Centers: Odoo supports connecting IoT devices to work centers. In the IoT Triggers tab of a work center, you can set up triggers like when a work order starts or finishes, an IoT device action is executed (e.g., signaling a machine or reading a sensor)
+odoo.com
+odoo.com
+. This requires Odoo IoT Box setup and is an advanced use-case for automated data capture or machine control on the shop floor.
+
+Maintenance Integration: If the Maintenance app is installed, each work center form gets additional tabs for Equipment and Maintenance
+odoo.com
+. You can link specific machines (equipment assets) to the work center, and schedule preventive maintenance or record breakdowns. Operators on the Shop Floor can directly create a maintenance request if a machine at that work center has an issue (e.g., by clicking a maintenance button on the work order interface). This integration helps reduce downtime by tying maintenance actions to production. For example, if a machine is due for service after X hours of operation, Odoo can generate a maintenance activity. Also, maintenance requests can automatically mark the work center as unavailable (time off) during the repair period.
+
+In summary, routings in Odoo 18 are essentially managed through BoM operations and work centers. Define clear operations in the BoM, assign them to properly configured work centers, and Odoo will handle the routing of work orders through those centers in sequence. Make sure to configure working hours, capacity, and costs accurately, as these directly influence scheduling and cost accounting of your manufacturing orders
+odoo.com
+odoo.com
+.
+Advanced Manufacturing Features
+
+This section covers some advanced scenarios and features in Odoo 18 Manufacturing, including subcontracting, by-products, and detailed work order operations/dependencies.
+Subcontracting (Outsourced Production)
+
+Subcontracting allows you to outsource a manufacturing operation or an entire product’s production to a third-party vendor (subcontractor). In Odoo, basic subcontracting means you supply a purchase order to a subcontractor who delivers the finished product to you (or even dropships to your customer), possibly using components you provide.
+
+To enable subcontracting, first install the Subcontracting feature (in Odoo 18 this is part of Manufacturing app settings). Then, for the product you want made by a subcontractor, configure its product form and BoM accordingly. On the product’s Inventory tab, set the Routes to include Buy and Subcontracting, and typically also Replenish on Order (MTO) if you only order it when needed
+odoo.com
+odoo.com
+. You also need to add your subcontractor as a vendor for that product (under the product’s Purchase tab, add a vendor and price)
+odoo.com
+odoo.com
+.
+
+Next, create a special BoM for the product with BoM Type = Subcontracting. In the BoM form, when you select Subcontracting, a field appears to choose the Subcontractor(s) allowed
+odoo.com
+odoo.com
+. List the components that you will provide to the subcontractor (if any) in the BoM’s Components. For example, you might supply critical materials to ensure quality, while the subcontractor uses their own minor ingredients. If in “basic subcontracting” the subcontractor supplies all materials, you might actually leave the BoM component list empty or just informative. Typically, though, you list what you will send to them.
+
+Workflow: In subcontracting, you don’t create an MO in your system. Instead, you create a Purchase Order to the subcontractor for the finished product. When you confirm a PO for a subcontracted product, Odoo will do two things:
+
+    Generate a delivery order from your inventory to send any components (if defined) to the subcontractor. This is an internal transfer of components to a virtual location tied to that subcontractor (or a dropship if configured).
+
+    Generate a receipt for the final product (either to your warehouse or directly to customer if dropship).
+
+The typical steps:
+
+    Create Purchase Order to the subcontractor for X units of the product
+    odoo.com
+    odoo.com
+    .
+
+    Deliver components: Odoo creates a transfer of the required components to the subcontractor’s location. Ship those out (validate the delivery once components are sent).
+
+    When the subcontractor finishes and sends the product back, validate the Receipt in Odoo (incoming shipment of the finished goods). The act of receiving the subcontracted product will automatically consume the sent components from the subcontract location and produce the final product into your stock. If configured as dropship to customer, the receipt will be to a customer location accordingly
+    odoo.com
+    odoo.com
+    .
+
+Throughout this, Odoo keeps track of the cost: the PO line’s price to the subcontractor is the service cost, and the components consumed (if any) carry their cost. The end product’s cost will include both. Odoo 18 even allows setting lead times for subcontracting so it schedules expected delivery dates properly
+odoo.com
+(you can set a lead time on the BoM or vendor for subcontracting).
+
+Note: There are variations like Resupply Subcontractor (you keep subcontractor stocked with components in anticipation) and Dropship to Subcontractor (components go directly from your supplier to the subcontractor). These are more advanced logistics routes available in Odoo (configurable via routes like “Resupply Subcontractor on Order”)
+odoo.com
+. In essence, Odoo can handle sending materials to subcontractors and even drop-shipping final goods to customers, but the basic workflow described covers the core steps.
+
+Subcontracting is useful to extend your capacity or outsource specialized processes. With Odoo, you maintain visibility: inventory levels of components at subcontractor location are tracked, and you use familiar purchase and inventory screens to manage the outsourced production.
+By-Products
+
+Sometimes a production process yields secondary outputs or by-products. For example, sawmill cutting logs into lumber will produce sawdust as a by-product. Odoo supports accounting for by-products in manufacturing so that they are added to inventory.
+
+First, enable the feature by going to Manufacturing ‣ Configuration ‣ Settings and activating By-Products
+odoo.com
+. This will add a By-Products tab on BoM forms
+odoo.com
+.
+
+On the BoM of a product, open the By-Products tab and list any by-product that is produced during the manufacturing of the main product. For each by-product, specify the product and the quantity generated per production cycle
+odoo.com
+. You can also indicate if the by-product is associated with a specific operation in the BoM (Produced in Operation) – e.g., scrap wood comes out of a cutting operation
+odoo.com
+odoo.com
+.
+
+When you manufacture using that BoM, Odoo will automatically create stock moves to receive the by-products into inventory (to the location specified, typically the production location’s output or stock). When the MO is completed and marked done, the by-product quantities are added to inventory just like the finished product
+odoo.com
+odoo.com
+. On the MO’s Product Moves you’ll see the by-products listed as coming from the production (virtual) location to your stock
+odoo.com
+.
+
+By tracking by-products, you maintain accurate inventory of those secondary goods, which could be sold, reused, or need disposal. For instance, if manufacturing 100 units of cheese produces 10 units of whey as by-product, completing the MO will increase whey stock by 10 units. This is all handled automatically once set up on the BoM
+odoo.com
+odoo.com
+.
+Work Order Operations and Dependencies
+
+Odoo’s Work Orders can be configured with dependencies and parallelism to model complex routings:
+
+    Sequential Operations: By default, operations listed in a BoM are done sequentially in the order they appear. If all operations happen in one routing line after another, you simply list them in order.
+
+    Parallel Operations: If two operations can occur in parallel (different work centers, no dependency), you can give them the same sequence or not link them. Odoo will then allow those work orders to start without waiting on each other (provided resources are available). Currently, Odoo’s interface doesn’t have an explicit parallel setting in Community edition, but you achieve it by how you schedule and start the work orders.
+
+    Operation Dependencies: The Work Order Dependencies feature (in Enterprise) allows you to specify if an operation depends on another not just immediately prior. For example, operation C can only start after both A and B are finished. This creates more complex routing graphs. In Odoo 18, if using Enterprise, you can configure dependencies on the BoM operation lines or via an ECO (this feature is mentioned in documentation)
+    odoo.com
+    odoo.com
+    .
+
+    Overlap: Odoo doesn’t natively support overlapping operations on the same MO except via splitting the MO or using parallel work orders approach. However, you can split production into multiple MOs if needed to stagger operations.
+
+In most cases, basic sequential routing suffices. If an operation uses multiple work centers or teams, consider breaking it into multiple operations for clarity.
+
+Batching Work Orders: If you produce in batches, note that Work Center Capacity can be used to indicate a batch size (e.g., if capacity is 10, a single work order could handle 10 units at once). If you have more units than capacity, Odoo will split into multiple work orders automatically to respect that capacity.
+
+Splitting and Merging MOs: Odoo also provides functions to Split a manufacturing order into smaller lots or Merge similar orders together
+odoo.com
+odoo.com
+. For example, if you have an MO for 100 units but you want to produce in two batches of 50, you can split it (this will distribute the components accordingly). Conversely, if you have two MOs for the same product, you might merge them to run together if it’s more efficient. These actions are available via the MO form (under the action menu) in enterprise version, and they help manage production lots.
+
+Unbuild Orders: In case you need to disassemble a finished product back into components (for example, to reuse parts or because of a return), Odoo has an Unbuild Order feature
+odoo.com
+odoo.com
+. This essentially consumes the finished product and puts components back to stock according to a BoM, reversing a production. Use this carefully, usually in after-sales or rework scenarios.
+
+Each of these advanced operational features extends Odoo’s manufacturing to handle real-world complexities: outsourcing, multi-output production, and flexible routing.
+Quality Checks and Quality Control Points
+
+Quality management is integral to manufacturing. Odoo’s Quality module integrates with Manufacturing to allow quality checks at various stages of production.
+
+Setup: Install the Quality app and configure at least one Quality Team. The Manufacturing module will utilize quality only if the Quality app is installed
+cybrosys.com
+. In the Quality app, you define Quality Control Points (QCPs) which specify when and what to check, and Quality Teams who handle the checks and alerts.
+Quality Control Points (QCPs)
+
+A Quality Control Point is a rule that automatically creates a quality check at a certain point in an operation. You can create QCPs under Quality ‣ Quality Control ‣ Control Points. Each QCP can target a specific operation type (e.g., a manufacturing operation, a receipt, a delivery) and optionally specific products or product categories
+odoo.com
+odoo.com
+.
+
+For example, you could set a QCP for Manufacturing operation on product “Motor” – meaning whenever a manufacturing order for Motor is processed, a quality check is required at a defined stage
+odoo.com
+odoo.com
+. You can even narrow it down to a particular work order operation; if Manufacturing is selected as the operation in the QCP, an additional field appears to pick a specific Work Order Operation (from the BoM’s operations) to tie the check to that step
+odoo.com
+. E.g., a QCP for the “Assembly” operation of Coffee Table ensures a check is generated only at that operation, not at final completion
+odoo.com
+odoo.com
+.
+
+QCPs also define when/frequency to create checks:
+
+    Control Per: whether to create one check per operation, per product, or per quantity batch
+    odoo.com
+    odoo.com
+    . Operation = one check for the whole MO or transfer, Product = one check for each product in that operation, Quantity = check a certain sample percentage of items. If Quantity, you specify the percentage and enable Partial Transfer Test
+    odoo.com
+    odoo.com
+    . For instance, Control Per = Quantity 10% means for an MO of 100 units, 10 units should be tested.
+
+    Control Frequency: whether to trigger checks on every operation (All), randomly (e.g., 20% of the time), or periodically (e.g., once every 5 operations or days)
+    odoo.com
+    odoo.com
+    . This helps in sampling strategies – you might not test every single production if not needed, but maybe one in every 10.
+
+Finally, define the Type of Quality Check – what form the check will take. The options include:
+
+    Instructions: a simple checklist or instructions for the operator to follow (pass/fail based on doing the steps).
+
+    Take a Picture: the operator must attach a photo of the item.
+
+    Pass - Fail: a binary check where the item either passes or fails criteria
+    odoo.com
+    odoo.com
+    .
+
+    Measure: requires measuring a value (length, temperature, etc.) and entering the measurement, often with tolerance thresholds
+    odoo.com
+    .
+
+    Worksheet: attach a quality worksheet (a form or PDF) that must be filled out.
+
+When an MO (or specific work order) hits the point defined by a QCP, Odoo will generate a Quality Check record attached to that MO/WO. On the Work Order interface (tablet or MO form), the operator will be prompted to complete the quality check before proceeding. For example, a check might pop up saying “Measure the diameter of a sample piece, it must be 5 ±0.1 cm” (Measure type). The operator enters the value; if it’s out of tolerance, they could fail the check.
+
+All quality checks appear in the Quality ‣ Quality Checks menu as well, where quality team members can review their status. If a check fails or if there’s a quality issue, the operator or quality user can create a Quality Alert from the manufacturing order (there’s a button Quality Alert on MO if quality issues are present)
+odoo.com
+. A Quality Alert is a record of a problem that can be managed through a quality team’s process (with root cause analysis, corrective actions, etc., managed in the Quality app).
+Quality Checks Execution
+
+During production, when a quality check is triggered (either automatically via QCP or manually created), the responsible person will need to process it. For manual quality checks, you can always create one on the fly via Quality ‣ Quality Checks ‣ New (for instance, an inspector wants to do an extra random check)
+odoo.com
+odoo.com
+. You’d link it to an MO or Transfer and choose Control Per, etc., similar to QCP setup.
+
+On the work order tablet view, quality checks are integrated. The operator sees a Quality Checks button or gets prompted to pass/fail a check. If “Take a Picture” type, the system will require uploading a photo (if using a tablet camera, it can integrate)
+odoo.com
+odoo.com
+. If Measure type, a field is provided to input the measured value. If Worksheet, the operator will fill out the form.
+
+The operator (or quality inspector) will then mark the check as Pass or Fail (for pass/fail or measure types, failing if criteria not met)
+odoo.com
+odoo.com
+. If failed, typically a Quality Alert can be created to document the issue and you might block the production lot for review. Odoo doesn’t automatically halt the MO on a failed check, but through procedure, a failed check should trigger a review before proceeding.
+
+Quality Checks and QCPs ensure that at critical points of manufacturing, inspections occur regularly and systematically. This helps maintain product quality standards. All check results are stored, providing a history of quality verifications for each manufacturing order (useful for compliance and continuous improvement).
+
+Quality Tips: Define QCPs for key production steps, especially for incoming materials (to not use faulty components) and final inspections. Use the Random or Periodic frequency for spot-checks if checking every unit is impractical. Empower operators to raise alerts – for example, if they see any defect outside the formal checks, they can still hit Quality Alert on the MO to notify the quality team.
+Integration with Other Modules
+
+Manufacturing in Odoo is tightly integrated with several other applications: Inventory (stock movements), Purchase (procurement), Quality, Maintenance, PLM, and Accounting. These integrations ensure a seamless flow of information across departments.
+Inventory Integration (Stock Movements)
+
+Every manufacturing operation will consume raw materials and produce finished goods in inventory. Odoo handles these via stock moves associated with Manufacturing Orders:
+
+    When an MO is completed, the specified quantity of finished product is added to inventory, and the component quantities are deducted from inventory (or from WIP locations), according to the BoM. In a one-step manufacturing, this happens in one go when you mark the MO done
+    odoo.com
+    odoo.com
+    . In multi-step manufacturing, it’s split into explicit picking and put-away transfers as described earlier (picking components out of stock, and storing finished goods).
+
+    The locations used are determined by your warehouse configuration. Typically, components are taken from a Stock/Raw Materials location and moved to a Production location during production, then finished goods are moved from Production to Stock/Finished Goods location. Odoo sets these up behind the scenes with the 2-step/3-step manufacturing config on the warehouse
+    odoo.com
+    . All these are internal moves tracked by Inventory.
+
+    If you mark some components as scrapped during production (maybe due to damage or waste), you can record a scrap on the work order or MO, which moves those items to a Scrap location (removing them from available stock)
+    odoo.com
+    . This way inventory reflects the lost materials.
+
+    Lot/Serial numbers: If components or finished products are lot or serial tracked, the MO will allow/require you to specify which lots are consumed and assign lot/serial for the output
+    odoo.com
+    odoo.com
+    . Odoo can generate serial numbers during production if configured (there’s a Register Production step that can create a new lot/serial for each unit, very useful for unique serials)
+    odoo.com
+    odoo.com
+    .
+
+In short, the Inventory module records all material movements triggered by manufacturing. The Inventory Valuation (if using automated valuation and costing) also gets impacted – costs of raw materials issue out, and finished goods come in at their computed cost. This leads into accounting integration.
+Purchase and Procurement Integration
+
+Manufacturing doesn’t operate in isolation – you often need to buy raw materials, and you might manufacture some products to stock or to order. Odoo’s Procurement system ties Inventory, Purchase, and Manufacturing together through Reordering Rules and Routes:
+
+    Reordering Rules: You can set minimum stock rules on raw materials such that when stock falls below a threshold, Odoo will automatically generate a Request for Quotation (RFQ) to buy more or a Manufacturing Order to produce more, depending on the product’s supply route. For a raw material that is purchased, the reordering rule will create a Purchase RFQ in the Purchase module. If a product is produced in-house, a reordering rule can trigger a draft MO for it to replenish stock.
+
+    Make To Order (MTO): If you set a product’s route to Replenish on Order (MTO), Odoo will not keep it in stock but will create a procurement each time there is demand for it. For a manufactured product with MTO, this means when a Sales Order for it is confirmed, Odoo generates a Manufacturing Order for the exact quantity (bypassing stock levels)
+    odoo.com
+    . If it’s a purchased product with MTO, it generates a Purchase Order on demand. MTO ensures no stock is kept, but as noted, linking everything one-to-one can reduce flexibility in reallocating stock
+    odoo.com
+    . It’s great for custom or expensive items.
+
+    Multi-level procurement: As mentioned, with multi-level BoMs, confirming a top-level MO can trigger sub-MOs or purchase orders for components if configured (via MTO or reordering 0 stock rules)
+    odoo.com
+    . For example, you sell a Bicycle (manufactured), which requires a Wheel (manufactured subassembly) and a Bell (purchased). If Bicycle is MTO+Manufacture, confirming the SO creates a Bicycle MO. That MO’s components include Wheel and Bell. For Wheel (if Wheel is MTO+Manufacture or has a 0-stock reordering rule), Odoo will create a Wheel MO. For Bell (if Bell is MTO+Buy or has a reordering rule), Odoo will generate a Purchase RFQ to buy Bells. The scheduler in Odoo runs these procurements automatically to meet the demand.
+
+    Subcontracting and Purchase: As described in the subcontracting section, the integration with Purchase is direct – subcontracting essentially uses Purchase Orders to manage outsourced production. The Purchase app will show orders to subcontractors and receipts of finished goods.
+
+    Dropshipping: In cases where you want to manufacture and ship directly to a customer (without storing in your warehouse), Odoo can be configured to “dropship” from manufacturing. Typically, this would mean the manufacturing happens and on completion, instead of moving finished goods to Stock, it moves them to a customer outbound shipment. This requires careful route configuration (manufacture -> deliver to customer). It’s less common but possible with route customization.
+
+Practically, a manufacturing company will use Purchase module to replenish raw materials. The Inventory app will generate those needs either by reordering rules (suggested manually or via scheduler) or by planners reviewing the Inventory ‣ Replenishment screen which shows which products need reordering. From there, they can trigger Purchase RFQs or MOs as needed. Odoo ensures that all demand (Sale Orders, forecast, manufacturing components) can be fulfilled via the procurement methods set, linking Purchase and Manufacturing appropriately.
+Quality and Maintenance Integration
+
+We already covered Quality Control integration in the quality section. In summary: the Quality app introduces quality checks and alerts within manufacturing. The integration points are:
+
+    Quality Control Points can be tied to Manufacturing Orders or specific Work Orders
+    odoo.com
+    . When triggered, the MO/WO will not be completed until the check is processed, thus embedding quality steps into production workflow.
+
+    Quality Alerts can be raised from MOs. These alerts (managed in Quality app) can carry the reference of the MO and possibly even stop further processing until resolved (depending on your internal procedure).
+
+    The Quality app also integrates with Inventory (receipts/deliveries) in similar ways, but for manufacturing the key is in-process QC.
+
+The Maintenance app (often called Manufacturing Maintenance when referring to integration) connects with work centers:
+
+    You can assign Equipment (from Maintenance) to Work Centers
+    odoo.com
+    . For example, Work Center “Drill Station” might have equipment “Drill Press Machine #3”.
+
+    On the Work Order control panel (Shop Floor), if an operator encounters a machine issue, they can click a button to create a Maintenance Request on the fly. This request is logged in the Maintenance app, and can have the work center and MO reference. You might even configure Odoo to block the work order until maintenance is done (or the operator can mark the work order as blocked).
+
+    Preventive maintenance can be scheduled based on usage. Odoo tracks work center hours through work orders; you could set a maintenance trigger after X hours or cycles (this may require a little customization or manual monitoring of OEE data).
+
+    The Maintenance calendar will show if a machine (work center) is scheduled for maintenance, and you should mark the work center as unavailable during that period (either automatically via maintenance calendar or manually as time off) so that MOs don’t get scheduled then.
+
+By integrating maintenance, you reduce downtime: machine breakdowns are recorded and addressed promptly, and recurring maintenance is not overlooked. It also provides a history of equipment performance and costs tied into manufacturing (e.g., you could analyze a work center’s maintenance downtime vs its production output, affecting OEE).
+PLM (Product Lifecycle Management) Integration
+
+The PLM module is geared towards engineering teams managing product designs, BoM versions, and change orders. Integration points with Manufacturing include:
+
+    Engineering Change Orders (ECOs): As discussed, PLM allows creating ECOs for BoM changes. When an ECO is final and applied, it updates the BoM used by manufacturing to a new version
+    odoo.com
+    odoo.com
+    . This ensures manufacturing always uses the latest approved specifications. The Manufacturing app will then automatically use the new BoM for new MOs, while older MOs remain linked to the older BoM version (which is preserved via PLM version history).
+
+    BoM Version Tracking: On any MO or finished product, you could trace which BoM version was used for its production by looking at the ECO history
+    odoo.com
+    odoo.com
+    . This is useful if a defect is found and it was tied to a particular version of design – you can isolate which batches used that design.
+
+    Documents and Attachments: PLM allows attaching drawings or documents to BoMs (and even to specific operations via worksheets). These attachments can be made visible to workers on the Shop Floor (for example, an assembly drawing can be attached to an operation). When PLM updates the document in a new ECO, the new version of the document will show for new work orders, whereas old work orders retain links to old docs – thus ensuring each production run uses the correct documentation.
+
+    Approvals: If your company requires an approval process for changing a BoM or process, PLM’s ECO stages and approvals facilitate that. Manufacturing will not implement a change until the ECO is marked Done/Effective, at which point all new MOs use the new specs
+    cybrosys.com
+    . It separates engineering changes from production until ready.
+
+In short, PLM integration brings robust version control and change management to manufacturing, vital for industries like aerospace, automotive, or electronics where designs change and need traceability.
+Accounting Integration (Product Costing & WIP)
+
+Manufacturing has significant accounting implications. Odoo supports both Standard Costing and Actual (Average or FIFO) Costing for products, and it can generate accounting entries for production if configured.
+
+    Product Costs: Each product can have a cost (standard cost or computed cost). For manufactured products, Odoo can compute a suggested cost based on BoM components and operation costs. You can use the Compute Price from BoM wizard to calculate what a product’s cost should be given its BoM (it sums component costs and can add operation costs per hour * routing time).
+
+    Cost of Operations: The cost per hour of work centers and any subcontracting fees are rolled into manufacturing cost. Odoo 18 introduces the ability to account for labor and overhead in Work In Progress (WIP). In the Production Analysis report, you can see breakdowns such as Component Cost, Operation Cost, Subcontracting Cost for your manufacturing orders
+    odoo.com
+    odoo.com
+    .
+
+    Inventory Valuation: If your products are configured with Automated Inventory Valuation (typically if using FIFO or Average cost), when a manufacturing order is completed, Odoo creates accounting journal entries to value the produced stock. The typical entry will debit the Inventory Asset account of the finished product with its total cost and credit the Inventory Asset accounts of components (reducing raw material assets). Under standard costing, it might instead credit/debit Production Variance accounts if actual component costs differ from standard.
+
+    Work In Progress (WIP) Accounting: New in Odoo 18, you can use WIP accounts to recognize production costs before the MO is finished. Traditionally, without WIP, all component consumption and cost hits the books at completion of the MO (meaning until then, costs sit in raw material inventory). With WIP, as you consume materials and incur labor, you can post those costs to a WIP asset account, reflecting partially finished goods on the balance sheet
+    cybrosys.com
+    . Odoo 18 allows posting WIP journal entries for ongoing manufacturing orders
+    cybrosys.com
+    . You configure a WIP Account and WIP Expense/Overhead Account in Accounting settings (Stock Valuation section)
+    cybrosys.com
+    cybrosys.com
+    . Then, for a manufacturing order in progress, you can click Post WIP (either per MO or in batch) to create a journal entry moving component costs and operation costs into the WIP account
+    cybrosys.com
+    cybrosys.com
+    . For example, if an MO has consumed $250 of materials and $100 of labor so far, posting WIP will credit the raw material inventory (and maybe a labor accrual or expense account) and debit $350 to Work In Progress (asset)
+    cybrosys.com
+    cybrosys.com
+    . This way, your balance sheet shows $350 of WIP inventory for the in-progress order. Once the MO is completed, Odoo will post the final completion entry: credit WIP and debit finished goods inventory for the total cost, and any difference (if more materials or labor were added after WIP posting) will adjust accordingly.
+
+    Manufacturing Order Cost Analysis: On each MO (especially in enterprise version), you can see a cost analysis: it lists the total cost of components, labor (work center time * cost/hour), and any other costs. It will compare to the product’s standard cost and record a variance if needed. This is useful for checking profitability or cost control.
+
+In Accounting reports, the Cost of Goods Manufactured will flow into Cost of Goods Sold when those finished goods are sold. The manufacturing module ensures the costs are correctly attributed to the products made.
+
+In summary, Odoo’s accounting integration for manufacturing allows real-time valuation of production and proper financial reporting of manufacturing activities. With Odoo 18’s WIP feature, companies with long production cycles can now recognize expenses progressively rather than all at completion, leading to more accurate periodic financials
+cybrosys.com
+cybrosys.com
+.
+
+(Note: Setting up WIP requires enabling the feature and possibly enterprise edition. In community, you might rely on manual adjustments for WIP or just account at completion.)
+Automation, Triggers, and Alerts in Manufacturing Flows
+
+Odoo provides various ways to automate manufacturing operations and alert users of exceptions:
+
+    Automatic Order Planning: Use Reordering Rules to automate manufacturing or purchasing. For manufactured products, you can set a rule with minimum 0 and maximum 0 and a Multiple of 1 (lot size) – essentially a 0/0 rule – which means whenever there’s any demand, it will trigger an MO for exactly that demand
+    odoo.com
+    odoo.com
+    . This is effectively make-to-order via the scheduler without keeping stock. Reordering rules can run automatically (via the scheduler that Odoo runs each day or manually) to create MOs when stock falls below minimum. This ensures you don’t have to manually create manufacturing orders for each sale or requirement; the system plans them.
+
+    Make to Order (MTO): As mentioned, MTO route on a product triggers an immediate procurement when a sales order line is confirmed. For a manufacturable product with MTO, this means an MO is created right away linked to that sale. This automation is useful for custom products or if you want each sale to have its own production order.
+
+    Master Production Schedule (MPS): While MPS involves manual planning, once you set quantities in the future, Odoo can generate Draft MOs or RFQs to meet those future needs automatically when you click Compute in the MPS. So it’s semi-automated planning. It’s driven by forecast rather than actual orders.
+
+    Chained Triggers for Sub-assemblies: In a multilevel BoM scenario, Odoo’s recommended method is reordering rules (0/0) on subassembly products
+    odoo.com
+    . This effectively automates the creation of needed sub-MOs when a top-level MO is confirmed (since confirming top MO will consume subassembly stock, making it go below 0, triggering the rule to refill by manufacturing)
+    odoo.com
+    . The alternative, MTO on subcomponents, triggers immediate linked MOs. Either way, the system automates the cascade of production orders.
+
+    Alerts and Warnings: Odoo can generate certain alerts in manufacturing. For example, if you try to mark a work order done without consuming the expected components, it will warn you (a Consumption Warning prompting you to record the consumed quantity)
+    odoo.com
+    . If a quality check is required and not done, it will block the MO from finishing until passed. These are in-process alerts guiding users.
+
+    Maintenance and Quality Alerts: As discussed, an operator can trigger a Maintenance Request or Quality Alert during a work order. These are forms of alerts that notify the maintenance or quality team of an issue. They aren’t automatic in the sense of system-generated (it requires a user to press the button), but they serve as structured escalation mechanisms integrated into the workflow.
+
+    Automated Actions: For advanced automation, Odoo’s general Automation Rules (Technical ‣ Automated Actions) can be used. For instance, you could create an automated action to send an email notification if a Manufacturing Order is delayed or blocked for some reason. Or when an MO is marked done, trigger an email to sales or update some field. This requires configuration in developer mode. Odoo 18 improves the automation rules interface, allowing time-based triggers (like X days after MO deadline, if not done, then notify)
+    odoo.com
+    .
+
+    Activities: You can use Odoo’s Activities as reminders. For example, you might schedule a follow-up activity on an MO if it stays in Planned state too long. While not automatic out-of-the-box, a manager can manually set an activity or use an automated action to create one.
+
+    Overall Equipment Effectiveness (OEE) Alerts: Indirectly, the reporting can alert you to issues – e.g., if OEE for a work center falls below target, it’s a sign of problems (machine downtime or inefficiency). While Odoo doesn’t pop-up an alert for that, regular monitoring of the OEE report can prompt improvement actions
+    odoo.com
+    odoo.com
+    .
+
+In essence, Odoo aims to automate routine triggers like generating orders via reordering rules and ensure timely visibility into issues via alerts and integrated buttons. It’s a good practice to leverage these so that your manufacturing planners are not manually calculating demands and your shop floor workers can easily flag issues.
+Reporting and Analytics for Production Performance
+
+Odoo provides several reporting tools to analyze manufacturing performance, costs, and efficiency:
+
+    Manufacturing Orders List & Pivot: In Manufacturing ‣ Reporting, the Production Analysis report is a powerful analytical view
+    odoo.com
+    . It allows you to group and measure data about your manufacturing orders. For example, you can see total quantity produced by month, average cost per unit, total component cost, labor cost, etc., per product or per work center. The Production Analysis supports many measures, such as:
+
+        Quantity Produced vs. Quantity Demanded (to analyze yield or shortfalls)
+
+        Total Cost, Component Cost, Operation (labor) Cost, Subcontracting Cost (absolute and per unit)
+        odoo.com
+        odoo.com
+
+        Average Production Duration and Total Duration of Operations
+        odoo.com
+        odoo.com
+
+        Total Employee Cost and Cost per Unit including all factors
+        odoo.com
+        odoo.com
+
+        Yield % (percent of planned production achieved)
+        odoo.com
+        odoo.com
+        .
+
+    You can slice this by product, by production order, by bill of materials, by work center, etc., using the dynamic pivot and graph views. For instance, you might compare the Cost/Unit of a product over the last 6 months to see if it’s rising (indicating potential issues in materials or efficiency) – the report can show that
+    odoo.com
+    . Or group by Work Center and measure Total Duration to see which centers are the busiest.
+
+    Overall Equipment Effectiveness (OEE) Report: OEE is a standard metric in manufacturing combining availability, performance, and quality to indicate how effectively a work center is utilized. Odoo 18 tracks OEE for work centers if you define the data (like work center working hours, and it knows runtime and downtime from work orders and work center time off). In Manufacturing ‣ Reporting ‣ Overall Equipment Effectiveness, you can see each work center’s OEE percentage and components of it. The target OEE you set on each work center is used as a benchmark
+    odoo.com
+    . OEE is calculated from actual production time vs available time, so if a machine was available 40 hours and produced for 30 hours effectively, OEE might be 75% (depending on performance and quality factors). This report helps identify under-utilization or bottlenecks in your factory.
+
+    Cost Analysis and Accounting Reports: If using Anglo-Saxon accounting and inventory valuation, you can run reports on inventory value and cost of goods manufactured. The Inventory Valuation report will show current WIP if WIP is enabled. Additionally, the Product Profitability report (in Accounting) can include manufacturing costs. The Production Analysis report already gives insight into per-unit costs and total costs by product
+    odoo.com
+    .
+
+    Work Order Analysis: You can analyze work order data by going to Manufacturing ‣ Reporting ‣ Production Analysis and grouping by Work Center or even by Operation (operation name). Measures like Total Duration of Operations or Avg. Duration per Unit can highlight efficiency differences across work centers or products. For example, see if one work center consistently takes more time than expected – could indicate training needs or machine issues.
+
+    Lead Time Reports: Odoo doesn’t have a dedicated manufacturing lead time report out-of-box, but you can derive it. The time between MO creation and completion can be analyzed (there is a field for date started and date finished on MO). Using pivot, you can compute average manufacturing lead times for products.
+
+    Maintenance and Quality Reports: Through their modules, you can track how many maintenance requests occurred per work center (to correlate with downtime). Quality app can report on how many checks failed per product or how many alerts were raised – indirectly reflecting quality performance of production. These are more module-specific but worth noting as part of overall production performance analytics.
+
+    Best Practices in Reporting: It’s useful to regularly review the Production Analysis with different lenses:
+
+        By Product: to identify which products are costly or problematic to produce.
+
+        By Work Center: to see capacity utilization and maybe justify adding capacity or rearranging.
+
+        By MO Status: e.g., filter to analyze only Done MOs in a period, or see if any backorders trends.
+
+        OEE: track OEE over time to see if improvements (maintenance, process changes) are working.
+
+All reports in Odoo are dynamic – you can click on measures or records to drill down to the underlying MOs or work orders. For example, if the report shows a high subcontracting cost for a product, clicking it can list the MOs where subcontracting was used and their costs.
+
+Overall, Odoo’s analytics give you both financial insight (costs, variances) and operational insight (efficiency, lead times, equipment utilization) for your manufacturing operations, helping in continuous improvement and strategic planning.
+Best Practices and Tips for Efficient Manufacturing Management
+
+Implementing Odoo 18 Manufacturing effectively goes beyond just using features – it’s about using them in the right way. Here are some best practices and tips, drawn from the system capabilities and manufacturing domain knowledge:
+
+    Ensure Proper Master Data: Accurate product and BoM data is the foundation. Always double-check that your BoMs are correct and complete. A missing component or wrong quantity can halt production or cause quality issues. Use the BoM smart button on products to quickly review or update BoMs if a design changes, or better, use PLM to manage changes with approval
+    odoo.com
+    odoo.com
+    .
+
+    Use Version Control for Changes: If you frequently update products, implement the PLM module. It keeps past BoM versions available and lets you revert if needed. This also provides traceability – if a batch of product had an issue, you can trace it to the exact BoM version used
+    odoo.com
+    odoo.com
+    . ECOs (Engineering Change Orders) in PLM enforce discipline – e.g., require sign-off before production uses a new component.
+
+    Plan Production with a “Bottom-Up” Approach: When introducing a new product with subassemblies, set up the subassembly manufacturing first. Maintain some stock of critical subcomponents to buffer against variability. In Odoo, leverage reordering rules to automatically replenish subassemblies and components – this prevents last-minute shortages
+    odoo.com
+    odoo.com
+    . A well-planned multilevel BoM structure and reordering strategy (like the recommended 0-min/0-max rule with auto-ordering) ensures each level of production triggers the next smoothly
+    odoo.com
+    odoo.com
+    .
+
+    Avoid Overproduction – Use Realistic Reordering Rules: Don’t set large minimum stock levels “just in case” unless necessary. They tie up capital. Instead, consider using the Master Production Schedule for items that need forecast-based production, and use Make To Order for custom or unpredictable items. The MPS can help you plan monthly/weekly production in advance based on forecasts, which is more efficient than reactively rush-producing everything.
+
+    Optimize Work Center Utilization: Set your work centers’ capacity and efficiency based on real observations (you can adjust Time Efficiency % if you notice actual times are slower or faster)
+    odoo.com
+    . Monitor the OEE report and strive to eliminate causes of downtime (setup better, maintenance, supply chain issues) to move OEE closer to target
+    odoo.com
+    . If a work center is a bottleneck, consider using the Alternate Work Centers field to plan load balancing, or invest in additional capacity.
+
+    Maintenance is Key: Downtime can cripple manufacturing. Use the Maintenance integration – schedule preventive maintenance regularly for critical equipment and use the data from Odoo to decide maintenance frequency (for example, every X hours of runtime). Train shop floor users to log maintenance requests at the first sign of trouble (vibrations, abnormalities) via the work order interface. A small maintenance fix can prevent a big breakdown. Also, record work center time off in Odoo for maintenance so scheduling is realistic
+    odoo.com
+    .
+
+    Implement Quality Checks at Critical Points: It’s easier to fix a problem if caught early. Configure quality control points for incoming materials (ensure you’re building with good parts) and at key stages of WIP and final product
+    odoo.com
+    odoo.com
+    . Use Partial (sample) checks for high-volume production to balance effort. When a quality check fails, don’t just override it – utilize Quality Alerts, investigate root causes, and address them (could be supplier issue, machine calibration, etc.). Over time, use Odoo’s quality data to see where most failures occur and improve that stage.
+
+    Leverage Subcontracting Strategically: If you subcontract, keep an eye on the inventory you supply to subcontractors. Use the Resupply Subcontractor feature if you want Odoo to automate sending stock to them when low. Clearly define which components they provide vs you provide on the BoM
+    odoo.com
+    . Regularly evaluate subcontractor performance (lead times, quality of returned product) since Odoo will give you data on that via receipts and any quality checks on their products.
+
+    Use Kits for Simple Bundling: If you have products that are just bundled for sale (no actual production process, e.g., a gift basket of items), use a BoM of type Kit instead of manufacturing. Kits automatically consume components at sale delivery instead of requiring a manufacturing order
+    odoo.com
+    . This avoids unnecessary MOs and is simpler for make-to-stock assembly of packs.
+
+    Keep an Eye on Production Costing: Periodically run the Production Analysis or cost reports to ensure your product costs are in line with reality. If you see costs creeping up, drill down to find why (material price increase? more scrap? longer operation times?). Odoo can highlight these through measures like Cost/Unit and Component Cost vs Operation Cost
+    odoo.com
+    odoo.com
+    . For standard cost systems, make sure to update standard costs when BoMs change significantly or annually at minimum.
+
+    Training and User Adoption: Ensure that your shop floor operators are comfortable with the system, especially if using tablets. A well-trained operator will reliably record production, lots, and any issues. Encourage them to use the interface rather than paper, as real-time data is a huge benefit (you’ll know immediately if a work order is stuck or if scrap occurred).
+
+    Utilize Batch Processing of Orders: If you have many manufacturing orders, use Odoo’s batch functions. For example, select multiple MOs in the list view and use Plan or Mark as Done in batch if you performed them physically. Also, the Post Inventory and Post WIP can be done in batch for multiple orders
+    cybrosys.com
+    cybrosys.com
+    . This saves time.
+
+    Document and Attach Work Instructions: Use the BoM operations’ Worksheet feature to provide visual work instructions to operators (you can attach PDFs or Google Slides, or even use the integrated text editor with images)
+    odoo.com
+    odoo.com
+    . Clear instructions reduce errors and training time. Odoo 18 even includes a ChatGPT integration to help generate operation instructions if needed
+    odoo.com
+    (useful for ideas, but always verify them).
+
+    Regularly Review Alerts and Warnings: Make it a routine to check for any backorders, delays (MOs past expected date), or lots that failed quality. Odoo’s Manufacturing Overview (kanban dashboard) may show alerts like X orders late. Take action on those promptly – communicate with procurement or customers if there are delays. The sooner an issue is addressed, the less impact on overall production flow.
+
+    Continuous Improvement: Treat the data coming from Odoo as a goldmine. Use it to answer questions: Where are we spending the most time? Which product has the most scrap? Is a particular supplier causing delays in our MOs? Odoo’s integrated approach means you can often trace an issue end-to-end (e.g., production delay traced to waiting on a part, traced to a late purchase order, traced to a vendor – which suggests maybe find a better vendor or keep more safety stock).
+
+By following these best practices – maintaining good data, using automation thoughtfully, and keeping a close feedback loop via reports and alerts – you can maximize the benefits of Odoo 18’s Manufacturing module. It will help you schedule and produce efficiently while maintaining quality and controlling costs, ultimately leading to a more responsive and well-oiled manufacturing operation.
+

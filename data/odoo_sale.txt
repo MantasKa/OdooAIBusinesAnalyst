@@ -1,0 +1,883 @@
+Odoo 18 Sales Module User Manual
+Setup and Configuration of the Sales Module
+
+Before using the Sales module, make sure it is installed and properly configured. Open the Sales application and navigate to Configuration > Settings. In the settings screen, you will find various options to tailor the Sales module to your needs
+odoo.com
+. Key configuration sections include:
+
+    Quotations & Orders: Here you can enable features like Quotation Templates, Online Signature, Online Payment, Default Quotation Validity, Default Recurrence, Sale Warnings, PDF Quote Builder, Lock Confirmed Sales, and Pro-Forma Invoice
+    odoo.com
+    odoo.com
+    . For example:
+
+        Quotation Templates: Enable to create reusable quotation templates (standard sets of products/services) that can be applied to new quotes
+        odoo.com
+        .
+
+        Online Signature: Allow customers to digitally sign quotations to confirm sales orders online
+        odoo.com
+        .
+
+        Online Payment: Require customers to make an online payment (full or partial, e.g. a down payment) to confirm orders
+        odoo.com
+        .
+
+        Default Quotation Validity: Set a default number of days that quotations remain valid (expiration deadline)
+        odoo.com
+        .
+
+        Sale Warnings: Enable warning messages for specific products or customers (e.g. to alert salespeople about special conditions)
+        odoo.com
+        .
+
+        PDF Quote Builder: Customize quotation printouts with multiple header/footer layouts and custom fields for professional quotes
+        odoo.com
+        .
+
+        Lock Confirmed Sales: Once a quotation is confirmed into a sales order, lock it to prevent any further editing
+        odoo.com
+        .
+
+        Pro-Forma Invoice: Allow sending pro-forma invoices (draft invoices) to customers before final invoicing
+        odoo.com
+        .
+
+    Invoicing: Under the Invoicing or Pricing section of Sales settings, configure how invoices are generated from sales. You can choose the Invoicing Policy – either Invoice what is ordered or Invoice what is delivered
+    odoo.com
+    . By default, Odoo uses Invoice what is ordered, meaning an invoice can be created as soon as the sales order is confirmed
+    odoo.com
+    . If you switch to Invoice what is delivered, invoices will only be generated after products are delivered, which is useful if delivered quantities often differ from ordered quantities
+    odoo.com
+    . (Note: If using Invoice what is delivered, you cannot use the automatic invoice-on-payment feature for online orders
+    odoo.com
+    .) In this section you can also enable Down Payments, allowing you to take advance payments on sales orders
+    odoo.com
+    .
+
+    Pricing & Products: Activate Multiple Pricelists to manage different pricing rules for different markets or customer segments
+    cybrosys.com
+    . With pricelists enabled, you can create multiple price lists (via Products > Pricelists) and set rules such as volume discounts, seasonal pricing, or currency-specific prices for your products. The Sales settings also provide a checkbox to enable Discounts, Loyalty & Gift Card programs
+    odoo.com
+    . By activating this, you allow line-item discounts on quotes and unlock advanced promotion features (discussed in Advanced Features below). If you sell in multiple currencies, ensure the multi-currency feature is enabled (in general settings) and configure foreign currency rates so that pricelists can apply appropriate currency conversions
+    odoo.com
+    odoo.com
+    .
+
+    Other Settings: The Sales module automatically integrates with other apps. For example, if you plan to use Customer Addresses for separate invoice and delivery addresses, enable the option in the Accounting app settings under Customer Invoices
+    odoo.com
+    . Also, if you want to use Sales Commissions for your team, go to Sales > Configuration > Settings and enable the Commissions feature – this will reveal a Commission Plans menu where you can define salesperson commission rules
+    cybrosys.com
+    . Remember to click Save after adjusting any settings. Only users with administrator rights can change these configuration options.
+
+Creating and Managing Quotations and Sales Orders
+
+In Odoo, the sales process typically begins with a quotation (also called a sales quotation or sales quote), which, once accepted or confirmed by the customer, becomes a sales order
+odoo.com
+. The Sales app provides a user-friendly workflow to create, send, confirm, and manage these documents.
+
+Quotations Dashboard: When you open the Sales app, you land on the Quotations dashboard, which lists all quotations relevant to you (filtered by My Quotations by default)
+odoo.com
+. You can remove the filter to see all quotations in the system
+odoo.com
+. Quotations can be viewed in list format or switched to Kanban, calendar, pivot, graph, or activity views for convenience
+odoo.com
+. From this dashboard, you can click on any quotation to view or edit its details.
+
+Creating a New Quotation: To create a new quote, click the New button on the Quotations screen
+odoo.com
+. This opens a fresh quotation form. The form has several important fields and tabs to fill out:
+
+    Customer: Select the customer (company or individual) you are selling to. This is a required field
+    odoo.com
+    . If the customer exists in your Contacts, start typing their name and select it. Once the customer is selected, the Invoice Address and Delivery Address will auto-populate from the contact record (you can change them if needed)
+    odoo.com
+    odoo.com
+    . If the customer is new, you can create it on the fly by typing a new name and clicking "Create". (Proper customer management is discussed in the next section.)
+
+    Referrer: If this sale was referred by another contact (e.g. a partner or an affiliate), you can optionally fill the Referrer field with that contact’s name
+    odoo.com
+    . When a referrer is selected, a Commission Plan field will appear, letting you choose a commission scheme to reward the referrer for this sale
+    odoo.com
+    (this requires the Commissions feature to be enabled and a plan configured).
+
+    Quotation Template: If you have enabled and created Quotation Templates, you can select a template in the Quotation Template field to pre-fill the quotation with predefined products, sections, or terms
+    odoo.com
+    . This is useful for speeding up quotes that follow a standard format (e.g. common service packages). Selecting a template may insert preset order lines and can also set a specific validity period for the quote if the template defines one
+    odoo.com
+    .
+
+    Expiration Date: The Expiration (Validity) date of the quotation is automatically calculated based on the default validity (e.g. X days from today) or the template’s settings
+    odoo.com
+    . You can adjust it if necessary to set a deadline for the customer to confirm the order.
+
+    Recurring Plan: If you are quoting a subscription or other recurring service, select a Recurring Plan (subscription plan) for the quotation
+    odoo.com
+    . The recurring plan defines the billing period (e.g. monthly, yearly) and duration for the subscription. (See Subscription Sales in Advanced Features for more detail.)
+
+    Pricelist: If multiple pricelists are in use, choose the applicable Pricelist for this customer or order
+    odoo.com
+    . The pricelist will automatically determine the product prices and currency based on your configuration (e.g. a VIP customer pricelist with discounted rates, or a pricelist in the customer’s local currency)
+    odoo.com
+    .
+
+    Payment Terms: Optionally select Payment Terms for this order (e.g. 30 days net, or immediate payment)
+    odoo.com
+    . Payment terms can also be set to default on the customer form.
+
+Once the header information is filled in, you will add the Order Lines (the products or services being sold):
+
+    Order Lines Tab: In the Order Lines tab, click Add a product to add an item. Select the product from your list, then set the Quantity and optionally adjust the Unit Price or give a Discount (if the discount feature is enabled)
+    odoo.com
+    odoo.com
+    . Repeat for each product or service. If the product has variants (e.g. size or color options), you can select the specific variant needed. The system will automatically compute taxes and totals based on the product’s tax settings and the chosen pricelist.
+
+    Product Catalog: Alternatively, you can click Catalog to open a product catalog view, which shows all products as cards organized by category and attributes
+    odoo.com
+    . From the catalog, you can browse and Add multiple items to the quote, adjusting quantities as needed, then click Back to Quotation to return with those items added
+    odoo.com
+    . This is helpful for quickly building an order with many items.
+
+    Sections and Notes: You can organize the quote with sections by clicking Add a section, entering a section title (e.g. "Hardware" or "Services"), and then dragging it above the relevant lines
+    odoo.com
+    . This makes the quote easier to read. You can also add a Note line (free text) for any explanatory text. These sections and notes will appear on the printed quotation.
+
+    Other Info Tab: The Other Info (or Notes) tab can contain additional details. For instance, internal Sales Team or Salesperson assignment, the Customer Reference (customer’s PO number if provided), Incoterms (delivery terms), or any internal memo about the order. You will also see an Online Confirmation field here where options like Signature or Payment might be toggled for this quote (inheriting from settings or template)
+    odoo.com
+    . The Notes field allows adding any internal note or special instructions (which can be set to appear on the sale order or invoice).
+
+After entering all details, Save the quotation. At this point it remains in Draft status (not yet sent to the customer).
+
+Sending the Quotation to the Customer: Once you’re ready, you can send the quotation to the customer for review and confirmation. At the top of the quotation form, use the action buttons
+odoo.com
+:
+
+    Send by Email: This will open an email composer wizard pre-filled with the customer’s email, the quotation attached as a PDF, and a template message
+    odoo.com
+    . You can modify the email body if needed. Click Send and Odoo will email the quote to the customer
+    odoo.com
+    . When a quotation is sent by email, Odoo typically marks it as Quotation Sent (which helps you track that it was communicated). The customer can click a link in the email to view the quotation in the Customer Portal and even sign or pay online if those options are enabled (see Advanced Features).
+
+    Print (via the print icon dropdown): You can print or download the Quotation PDF (standard or custom layouts) to send it manually or for your records. The PDF will include all order lines, totals, and any terms and conditions.
+
+    Send Pro-Forma Invoice: If you enabled Pro-Forma Invoice, a button for that will appear. This works like Send by Email but attaches a pro-forma invoice PDF (a non-official invoice for preview) instead of a quotation
+    odoo.com
+    . This can be used when a customer requires an invoice format to process payment before the order is confirmed.
+
+    Preview: The Preview button lets you see exactly what the customer would see on their portal view of the quotation
+    odoo.com
+    . It’s useful to double-check the layout or content. In preview mode, you can also emulate the customer’s actions (like clicking Sign or Pay if enabled). Use the "Back to edit mode" link to return to editing
+    odoo.com
+    .
+
+    Confirm: If the customer has verbally or otherwise confirmed the order (e.g. given you the go-ahead), you can click Confirm to confirm the sale without waiting for an online signature/payment. Once you hit Confirm, the quotation’s status changes from Quotation to Sales Order, and it is considered a firm order in the system
+    odoo.com
+    . At this point, if the Lock Confirmed Sales feature is on, the order becomes read-only (locked) to prevent changes
+    odoo.com
+    . Any attempt to modify a locked sales order will require unlocking by a user with proper rights.
+
+    Cancel: If the quotation will not proceed (e.g. customer declined or it was created in error), use Cancel to cancel it
+    odoo.com
+    . Cancelled quotations can still be accessed (with status Cancelled) but are not active. You can also reset a cancelled quote back to draft if needed (using the Set to Quotation option).
+
+Sale Order Management: After confirmation, the document is now a Sales Order (SO). The Sales Order form looks similar to the quotation form but will show Sales Order status and may include additional information like delivery and invoicing status. You might notice new smart buttons on the top of the form, such as Delivery and Invoice, which indicate related documents. Managing a sales order involves fulfilling delivery and invoicing (covered in the Delivery and Invoicing section). If Lock Confirmed Sales is enabled, the order is locked to changes; otherwise, you could still edit an order (e.g. to add a product or change a description) until an invoice or delivery is done. Best practice, however, is to avoid altering confirmed orders unless necessary, to keep records consistent. If changes are needed (e.g. the customer wants to add items after confirmation), you can use the Unlock button (visible on locked orders) or consider creating a separate order or a backorder.
+
+Throughout the process, Odoo tracks the status: a quotation may be Quotation (draft), Quotation Sent, then becomes a Sales Order (sometimes reflected as Order Confirmed) once confirmed. These stages are visible in the document history and help you filter or report on the pipeline of deals.
+Customer Management and Contact Linking
+
+Effective sales management requires proper handling of customer information. In Odoo, customers (clients, prospects, etc.) are stored as contacts in the Contacts module, and the Sales app links to them. You can manage customers either via the Sales > Orders > Customers menu or directly in the Contacts app. The Customers menu in Sales is essentially a filtered view of contacts designated as customers.
+
+Creating and Editing Customers: When creating a quotation or sales order, if you type a new customer name in the Customer field, Odoo will prompt you to create a new contact. A contact (customer) record typically includes the company or person’s name, address, phone, email, and other details like tax ID. It’s good practice to fill in as much relevant info as possible (especially address and email, so you can send quotes and deliver goods correctly).
+
+Multiple Addresses and Contact Persons: Odoo supports multiple addresses per customer. Often a company might have a billing address and a separate shipping address, or multiple offices. To add extra addresses or contact persons, open the customer’s contact form (e.g. via Contacts app or the Customers menu), click Edit, and under the Contacts & Addresses tab use Add to create a new address entry
+odoo.com
+odoo.com
+. You’ll be prompted to choose the address type:
+
+    Contact (an additional contact person or sub-contact),
+
+    Invoice Address (billing address),
+
+    Delivery Address (shipping address),
+
+    Other Address (for any other purpose),
+
+    Private Address (if you need a confidential address)
+    odoo.com
+    .
+
+Enter the details for the new address (e.g. the full address for a warehouse as a Delivery Address), then Save. Now the customer has multiple addresses on file. When you select that customer on a quotation, Odoo will automatically fill the Invoice Address and Delivery Address fields from the contact record
+odoo.com
+. You can still override them on the quotation if needed by clicking the small arrow next to the address and selecting or creating a different contact for that specific order
+odoo.com
+. This flexibility ensures the correct addresses are used for invoicing and shipping on each order.
+
+If your business uses separate invoice/delivery addresses frequently, ensure the feature is activated (in Accounting settings as mentioned earlier) so that these fields appear on orders
+odoo.com
+.
+
+Linking Opportunities to Customers: In a CRM context, you might start with a lead or opportunity before you have a confirmed customer. Odoo’s CRM and Sales apps are integrated. When you convert a lead to an opportunity in CRM, you can either link it to an existing customer or create a new one. Similarly, when you create a quotation from a CRM Opportunity, the system will require a customer to be linked. In the Pipeline, open an opportunity and click New Quotation (this button is available if the Sales app is installed)
+odoo.com
+. If the opportunity’s Customer field was empty (i.e. not yet linked to a Contact), Odoo will prompt you to either select an existing customer or create a new one at that moment
+odoo.com
+. This happens via a pop-up with options to Link to an existing customer (search by name) or Create a new customer record, or proceed without linking (not recommended)
+odoo.com
+. Choose the appropriate customer (or create one), and then Odoo will generate a new quotation pre-linked to that customer and tied back to the opportunity
+odoo.com
+. This ensures your sales quotations are always associated with a contact, which is important for keeping track of who you are selling to and for future reporting.
+
+Maintaining Customer Data: It’s considered a best practice to keep your customer database clean and up to date. Odoo provides tools like the Merge contacts utility if you discover duplicate customer entries
+cybrosys.com
+. Also, use descriptive names and set the company relationships (for example, if you sell to subsidiaries or branches, link them via the Related Company field). The contact form also includes tags, customer rank, industry, etc., which you can use for segmentation and analysis. By linking all sales orders to their respective contacts (and having proper addresses and details on those contacts), you ensure that documents (quotes, invoices, delivery orders) are accurate and that the system can properly record sales by customer.
+
+Finally, Referrers and Partners: As noted, Odoo allows linking a referrer on quotations for commission purposes
+odoo.com
+. The referrer is also a contact in the system. Tracking referrers can help with partner management and is part of customer management strategy if you work with resellers or affiliates.
+Advanced Features
+
+The Odoo 18 Sales module comes with several advanced features that can enhance your sales process beyond basic quoting and ordering. These include managing subscription sales, complex pricing rules and discounts, promotion and loyalty programs, as well as online order confirmations and payments. Below, we explore each of these advanced capabilities:
+Subscription Sales (Recurring Revenue)
+
+If your business sells subscriptions or recurring services (such as maintenance contracts or memberships), Odoo offers a dedicated Subscriptions application tightly integrated with Sales. This allows you to handle recurring revenue streams efficiently within the sales workflow. In Odoo 18, you can configure Subscription Plans which are essentially quotation templates designed for recurring products
+odoo.com
+.
+
+Setting Up Subscription Products: First, install the Subscriptions module. Mark any products that will be sold as subscriptions – on the product form under Sales, enable the option indicating it’s a subscription or recurring product (Odoo 18 has a checkbox for “Subscription” on the product form)
+cybrosys.com
+. This ensures that when such a product is sold, a subscription is created.
+
+Subscription Plans (Quotation Templates): Navigate to Subscriptions > Configuration > Plans to create subscription plans
+odoo.com
+. A plan defines the recurrence (billing interval) and other parameters of the subscription. When you create a plan, it uses the same form as a quotation template (since it’s an extension of that concept)
+odoo.com
+. Key fields in a subscription plan include:
+
+    Name: An internal name for the plan (not shown to the customer)
+    odoo.com
+    .
+
+    Quotation expires after: validity of quotes using this plan (in days)
+    odoo.com
+    .
+
+    Online Confirmation (Signature/Payment): whether to require online signature and/or payment on the quote for confirmation (often used for online subscription checkout)
+    odoo.com
+    .
+
+    Confirmation Mail: an email template that will be sent to the customer upon confirming the subscription
+    odoo.com
+    (for welcome emails, etc.).
+
+    Recurrence: the billing interval (e.g. every month, year, etc.). Selecting a recurrence turns this template into a subscription plan and opens additional options
+    odoo.com
+    .
+
+    After setting Recurrence, you can define the Duration of the subscription (e.g. open-ended “Forever” or a fixed number of periods)
+    odoo.com
+    . For fixed durations, you can set it to end after a certain time.
+
+    Self Closable: if checked, allows customers to close/cancel their subscription themselves from the customer portal
+    odoo.com
+    .
+
+    Automatic Closing: you can specify if and when Odoo should automatically close subscriptions that are unpaid past their due date (e.g. auto-close X days after expiration if not paid)
+    odoo.com
+    .
+
+    Invoicing Journal: specify which accounting journal to use for invoices generated by this plan (or leave blank to use the default sales journal)
+    odoo.com
+    .
+
+    In the plan, you will add the typical Order Lines (the products and their quantities that the subscription includes)
+    odoo.com
+    , as well as any Optional Products (upsell options the customer could add)
+    odoo.com
+    , and any plan-specific Terms & Conditions
+    odoo.com
+    if needed (these would override the default Sales terms if set).
+
+After creating subscription plans, your sales team can use them in quotations. Using a Subscription Plan on a Quote: In the Sales app, when creating a new quotation that includes a subscription product, you can select a Quotation Template / Subscription Plan from the dropdown on the quote form
+odoo.com
+. If you choose a subscription plan, Odoo will automatically fill in the recurrence, products, and any predefined terms from that plan into your quotation
+odoo.com
+. For example, if you have a “Standard Monthly Service” plan, selecting it might add the service product with a quantity of 1 and set the quote to recurring every month. Once the customer confirms such a quotation (via signature or by you clicking confirm), a Subscription record is created and visible in the Subscriptions app. All subscription orders, whether created from Sales or directly in Subscriptions, will appear in the Subscriptions dashboard for ongoing management
+odoo.com
+odoo.com
+.
+
+Managing Subscriptions: The Subscriptions app allows you to track the status of each subscription (e.g. running, renewals due, expired), generate recurring invoices, and handle renewals or upsells. You can configure Automation Rules in the Subscriptions app to automatically generate renewal quotes or invoices, send reminder emails, etc., ensuring you don’t miss a renewal. In sum, the integration between Sales and Subscriptions means once you sell a recurring product on a sales order, the system takes over the recurring billing workflow.
+Pricing Rules and Discount Strategies
+
+Odoo’s pricing engine is very flexible, allowing you to implement various pricing strategies to maximize sales and margins. Two primary tools are Pricelists and Discounts.
+
+Pricelists: A pricelist is a set of pricing rules that can be applied based on conditions like customer, product, quantities, date ranges, etc. In Odoo 18, you can have multiple pricelists and even assign multiple pricelists to a single product for different scenarios
+cybrosys.com
+. Common use cases:
+
+    Regional pricing (different price list per country or currency).
+
+    Tiered pricing (volume discounts: e.g. buy 10+ units get 5% off, 50+ units get 10% off).
+
+    Promotional pricing (special prices valid during a period).
+
+    Contract pricing (special price for a specific customer).
+
+To use pricelists, ensure the feature is enabled in Sales settings, then go to Sales > Products > Pricelists to create your rules. A price rule can set a fixed price, a percentage discount, or a formula (e.g. price = cost plus X%, or price = base price minus $Y) for products matching certain criteria. You can also base rules on product categories, allowing easy bulk discounting of groups of products. On the sales order line, when a customer and pricelist are chosen, the unit prices will automatically adjust according to the active pricelist rule. For example, if your VIP Customer pricelist gives 15% off list prices, when you select that pricelist for a quotation, all product prices on that quote will show 15% lower than the default price (and Odoo can display the discount or reference to the pricelist). Pricelists can also handle multiple currencies – if a pricelist is in a foreign currency, Odoo will convert or use specified prices in that currency
+odoo.com
+.
+
+Line Discounts: By default, Odoo allows adding a percentage discount on each order line (this is often enabled automatically when you activate the Discount & Loyalty programs). If you don't see a Discount column on quotation lines, check Sales > Configuration > Settings for an option to enable discounts on order lines. When enabled, each line will have a discount field where you can input a percentage discount to apply to that line’s price
+odoo.com
+. This is useful for ad-hoc discounts, negotiating prices with a customer, or applying promotions manually. For instance, you could give a 5% discount on one expensive item as a gesture, and it will deduct that percentage off that line’s subtotal.
+
+Global Discounts: Odoo out-of-the-box does not have a global order-level discount field (aside from using the Discount & Loyalty coupon feature, covered below). However, some companies handle this by creating a product called "Discount" with a negative price, or by using third-party modules. As a best practice, using pricelists or the promotion programs is cleaner for predefined discounts, and using the line discount field for one-off adjustments.
+
+Pricing Best Practices: Set up pricelists for scenarios you encounter frequently. For example, have a pricelist for wholesale customers, or for a seasonal sale event. You can assign a default pricelist to each customer (on the contact form), so when you create a quote for them, the correct prices load automatically
+odoo.com
+. This reduces manual errors and speeds up quoting. Use the Print Pricelist option if you need to review or share price lists – Odoo 18 allows printing a pricelist with selected products for review
+cybrosys.com
+.
+
+Also, monitor your margins using the margin feature (enable Product Margins in settings if available, which allows you to see cost and margin on order lines). This helps ensure your discount strategies are still profitable
+cybrosys.com
+.
+Promotion Programs and Loyalty (Discount & Loyalty Programs)
+
+Beyond straightforward discounts, Odoo 18 introduces a robust Discounts, Loyalty & Gift Card program engine that works across Sales, eCommerce, and Point of Sale. These promotion programs allow you to create special offers, coupon codes, loyalty point systems, and gift cards to incentivize customers
+odoo.com
+. This feature provides more dynamic and time-sensitive pricing options than static pricelists.
+
+Activation: In Sales > Configuration > Settings, under the Pricing heading, activate Discounts, Loyalty & Gift Card and save
+odoo.com
+. Once enabled, a new menu appears under Sales > Products called Discount & Loyalty where you will manage your promotional programs
+odoo.com
+.
+
+Creating a Promotion Program: Go to Sales > Products > Discount & Loyalty. If no program exists yet, Odoo will show you some templates (e.g. common promotions) to choose from for easy setup, or you can click New to create one from scratch
+odoo.com
+. Each program has several important fields:
+
+    Program Name: Internal name of the promotion (customers don't see this)
+    odoo.com
+    .
+
+    Program Type: The type of promotion or reward. Options include Coupons (single-use codes for a discount), Loyalty Cards (points accumulation), Promotions (automatic rules), Discount Code (generic code for discount), Buy X Get Y (buy some quantity, get a reward), Next Order Coupons (coupon granted after a purchase)
+    odoo.com
+    odoo.com
+    . Choose the one that fits your campaign.
+
+    Currency: Currency of the promotion (usually your company currency unless you specifically target another)
+    odoo.com
+    .
+
+    Pricelist: You can limit the program to a specific pricelist or multiple pricelists
+    odoo.com
+    . For example, you might have a promotion only for retail customers on the default pricelist. Leaving this blank means it applies to all customers/pricelists.
+
+    Points Unit: (Only for Loyalty Cards) the name of the points (e.g. "Reward Points") that customers accumulate
+    odoo.com
+    .
+
+    Validity (Start Date/End Date): Optionally set a period when this promotion is active
+    odoo.com
+    (leave blank for always active).
+
+    Limit Usage: You can limit how many times the promotion can be used in total (e.g. first 100 uses)
+    odoo.com
+    .
+
+    Available On: Choose where this program can be used – e.g. Sales orders, Website (eCommerce), Point of Sale, etc.
+    odoo.com
+    . This allows multi-channel promotions.
+
+    Specific Website or POS: If applicable, restrict to certain websites or point-of-sale locations
+    odoo.com
+    .
+
+Once the header info is set, the program form will adapt to the Program Type chosen. Generally, you will configure Conditional Rules and Rewards:
+
+    Conditional Rules: These define when the promotion applies. For example, "Minimum Purchase ≥ $500" or "Buy at least 3 items of Category X". In the program form’s Rules & Rewards tab, you add conditions such as a required coupon code, a minimum quantity, a minimum purchase amount, specific products or categories, etc.
+    odoo.com
+    odoo.com
+    . The options here depend on the program type. For a Discount Code type, the rule is basically the code itself (you'll specify the exact code customers must enter)
+    odoo.com
+    . For a promotion like "Buy X Get Y", the rule could be "Minimum Quantity = X of [some product/category]"
+    odoo.com
+    .
+
+    Rewards: This is what the customer gets when conditions are met. For instance, "10% discount", "Free Product Y", "Coupon for $20 off next order", or "Earn points". In the program form you will specify the reward details (percentage off, fixed amount off, product gift, loyalty points given, etc., depending on program type). For a loyalty points program, the reward might be accumulation of points per currency spent. For a coupon program, the reward is essentially the discount the coupon grants.
+
+Some examples of Program Types:
+
+    Coupon Codes: You generate unique coupon codes that customers can use one-time for a discount (e.g. $10 off). Odoo can generate a batch of codes for you to distribute.
+
+    Promotion (Automatic): No code needed – when the cart/order meets the rule, the reward auto-applies (e.g. automatically give 5% off if order > $500).
+
+    Discount Code: A generic code (like "SUMMER2025") that anyone can use for a set discount
+    odoo.com
+    .
+
+    Buy X Get Y: e.g. buy 10 get 1 free – the system tracks purchases and issues credit for free items once the threshold is met
+    odoo.com
+    .
+
+    Loyalty Cards: Customers accumulate points on purchases which they can redeem in future for rewards
+    odoo.com
+    (common in retail/food industry).
+
+    Next Order Coupon: After a purchase, the customer receives a coupon code to encourage a return visit (for use on their next order)
+    odoo.com
+    .
+
+All these programs, once configured and Published, become active. Customers can receive coupon codes (via email or printed on receipts), or the rules will trigger automatically in the sale order entry or on the eCommerce checkout. For example, if you set a promotion "10% off all orders over $1000 this month", when a Sales Order’s untaxed total exceeds 1000 and date is within the promo period, Odoo will automatically apply a 10% discount line to the order.
+
+These promotion and loyalty programs are powerful for marketing. Odoo ensures they integrate seamlessly:
+
+    They can be limited to certain customers (via pricelist or via providing certain coupon codes to certain people).
+
+    The system tracks usage of each coupon and promotion. There is typically a smart button on the program form showing how many times it’s been used or generated
+    odoo.com
+    .
+
+    In Odoo 18 and above, if a loyalty card or coupon is linked to a customer, the customer’s contact form will show a Loyalty Card smart button linking to their loyalty info
+    odoo.com
+    .
+
+Managing Promotions in Sales Orders: On a Sales Order, if a customer provides a coupon code, you can enter it (there will be a field for coupon code on the quotation/sale order if the feature is enabled). The system will validate it and apply the associated reward if conditions are met. Auto-promotions will apply once the order satisfies the rules (you’ll see a new line appear, e.g. “Promotion: 10% off”). Loyalty points programs require integration with eCommerce or PoS where customers log in and accumulate points; those points can then be redeemed as discount on sales orders.
+
+Best Practices for Promotions: Clearly define your promotion rules to avoid overlap or conflicts (Odoo will generally handle stacking of promotions in order of priority if you set priorities). Use the expiration dates to ensure promotions end on time. Also, test the promotion by creating a sample order that meets the conditions, to verify it applies correctly. Promotions can significantly drive sales if used strategically, such as holiday sales, clearance discounts, or loyalty rewards for repeat customers.
+Online Order Confirmation and Payments
+
+Odoo’s Sales module can streamline the order confirmation process by using the integrated online signature and payment features. This is especially useful when you send quotations to customers via email or when customers use the online portal/eCommerce to place orders. Instead of waiting for a signed PDF or manual payment, you can let the customer confirm the order instantly.
+
+Online Signature: If enabled in settings, an online signature allows the customer to digitally sign the quotation. When you send a quotation, the customer can open it in their browser (via the portal link) and click an option to sign. Once they apply their digital signature and confirm, Odoo will automatically mark the quotation as signed and confirmed (turning it into a sales order)
+odoo.com
+. This is particularly handy for B2B contracts or agreements where a formal acceptance is needed without the hassle of printing and scanning. Make sure Online Signature is checked in Sales settings for this to work
+odoo.com
+.
+
+Online Payment: You can require an online payment for order confirmation (either full payment or a pre-defined prepayment percentage)
+odoo.com
+. For example, you might ask for a 50% deposit before the order is confirmed. After enabling Online Payment in settings, you should configure one or more Payment Providers in Odoo
+odoo.com
+. Go to Invoicing > Configuration > Payment Providers or use the direct link under the Sales settings (appears under the Online Payment option) to set up providers like PayPal, Stripe, credit card payment acquirers, etc. Each provider can be configured with your merchant credentials and set to "Enabled" and "Published" on the website/portal
+odoo.com
+.
+
+On the quotation form, under the Other Info tab, there’s an Online Confirmation field where you can specify if this quote requires Payment (or signature) to confirm
+odoo.com
+. Quotation Templates can also carry this setting. When a quotation with Online Payment enabled is sent to the customer, the customer will see an “Accept & Pay” button on their portal quote page
+odoo.com
+. The process:
+
+    Customer clicks Accept & Pay on the quote.
+
+    A pop-up will show available payment methods (only the ones you configured and published will appear)
+    odoo.com
+    – for example, PayPal, Credit Card, etc.
+
+    The customer chooses a method and submits payment (this might redirect to the payment gateway’s page if necessary).
+
+    Upon successful payment, Odoo automatically:
+
+        Confirms the quotation into a Sales Order.
+
+        Records the payment on the resulting invoice (creating a payment transaction entry).
+
+        Notifies the salesperson that the order was confirmed and paid online
+        odoo.com
+        odoo.com
+        (a message appears in the order’s chatter, e.g. “Order paid online by X”).
+
+The salesperson can find the confirmed sales order in Sales app and also see the payment in the Invoice/Accounting app.
+
+This online payment workflow greatly accelerates the sales cycle for eCommerce and quick B2B sales. It reduces the manual step of chasing payments. One thing to note: if you use Invoice what is delivered policy, automatic invoice on payment is not possible
+odoo.com
+– in such cases, you might only take a down payment online, or simply confirm the order and invoice later once delivered.
+
+Online Payment Best Practices: Configure at least one reliable payment provider and test it (Odoo offers test modes). Commonly used ones are PayPal, Stripe, or Adyen. You can also enable Odoo’s own payment tokens if you have an enterprise subscription, allowing customers to save payment methods for recurring payments (helpful for subscriptions). Additionally, set a default quotation validity so customers know by when they should pay before a quote expires
+odoo.com
+. If you require only a partial payment (down payment) to confirm, you can set the percentage in Sales settings (“Prepayment amount (%)” field appears under Online Payment)
+odoo.com
+.
+
+Security is also important: using online payments means you should have your Odoo on a secure HTTPS domain and follow best practices for handling online transactions. The Payment Providers configuration will include options for that (some providers require webhook URLs, etc., which Odoo guides you through).
+
+In summary, with online signatures and payments, your customers can move from quote to order in one click, and you’ll instantly have a confirmed sale with payment recorded. This is ideal for a seamless, self-service sales process via the customer portal or eCommerce checkout.
+Delivery and Invoicing Processes
+
+Once a sales order is confirmed, the next steps are typically to deliver the products or services and invoice the customer. Odoo’s integrated approach means these steps are handled through the Inventory and Accounting apps but are accessible from the Sales order for convenience.
+
+Delivery (Order Fulfillment): For physical products, confirmation of a sales order will trigger the creation of a Delivery Order in the Inventory app (provided the product is configured to be stockable or require delivery). On the sales order, you will see a smart button labeled Delivery (or # of Deliveries if multiple) which links to the picking operation for this order. The warehouse team (or the salesperson, depending on your process) should process this delivery:
+
+    Open the delivery order (in Inventory app, it will be in the To Do state for the warehouse).
+
+    Check product quantities reserved, then Validate the transfer once items are picked and shipped. This will mark the products as delivered to the customer and adjust stock levels accordingly. If you cannot fulfill the whole order at once (not enough stock), you can do a partial delivery; Odoo will then keep the remaining quantity for a backorder.
+
+If you need to split deliveries (for example, multiple shipments for one order), Odoo can handle that via backorders or multiple delivery orders. Each completed delivery is recorded.
+
+Multiple Delivery Addresses: If a sales order has separate delivery addresses (drop shipping items to different places), you would typically split the order lines by address or use separate orders, as Odoo assumes one delivery address per order. There are advanced routing configurations for drop-shipment (delivering directly from vendor to customer) or multi-warehouse scenarios, but those are beyond the basic scope.
+
+Invoicing: Invoicing can occur at different points depending on your invoicing policy and business practice:
+
+    If using Invoice What is Ordered: you can invoice as soon as the sales order is confirmed (regardless of delivery status). From the sales order, you would click Create Invoice, choose the type (e.g. regular invoice for the full order, or a down payment invoice, etc.), and validate it to send to the customer
+    odoo.com
+    . Typically, a draft invoice is created in the Accounting app which you then post (and send by email if needed).
+
+    If using Invoice What is Delivered: you should only invoice after delivering. When you open the Create Invoice dialog on the sales order, Odoo will check delivered quantities. If nothing is delivered yet, it will warn "There is no invoiceable line"
+    odoo.com
+    and prevent the invoice, because under this policy, the invoice amount is based on delivered qty. In practice, you will fulfill the delivery first (Inventory app) and once the delivery is done (or at least some quantity delivered), return to the sales order and create the invoice for the delivered items
+    odoo.com
+    . Odoo will populate the invoice with the delivered quantity of each line and its corresponding amount.
+
+On the sales order form, Odoo displays fields for Delivered and Invoiced quantities for each order line once the order is confirmed
+odoo.com
+. This live tracking helps you see fulfillment status:
+
+    For each line, “Delivered” shows how many units have been shipped to the customer so far.
+
+    “Invoiced” shows how many units have been invoiced.
+    For example, if 5 of 10 units have been delivered and invoiced, you will see Delivered: 5, Invoiced: 5 on that line, and the remaining 5 still to deliver/invoice. Odoo automatically updates these when you process deliveries and create invoices
+    odoo.com
+    odoo.com
+    . Even partial deliveries are accounted for, and you can invoice partial deliveries incrementally.
+
+Down Payments (Deposits): Odoo supports taking advance payments. From a confirmed sales order, if the customer needs to pay a deposit before full delivery/invoicing, use the Create Invoice > Down payment (percentage) or Down payment (fixed amount) options
+odoo.com
+. This will generate an invoice for the specified down payment (e.g. 30% of the order, or a fixed $1000). When you later invoice the final balance, Odoo will offset the down payment on the final invoice (showing the advance paid). Down payments help manage deposits and retainers systematically.
+
+Pro-forma Invoice: If you enabled pro-forma invoices, you could send a pro-forma (which is essentially an Invoice document in draft state) to the customer for payment prior to actual delivery/invoicing. This is often used in B2B or international trade to get payment commitment. In Odoo, a pro-forma invoice is not an actual account move, but a template of an invoice you can send
+odoo.com
+. Once the customer pays, you then create the real invoice.
+
+Recording Payments: Payment recording can happen either at invoice validation (if you register a payment) or via the customer paying online (as described earlier) or later through the Register Payment button on an invoice. If you are using Odoo Accounting fully, each customer payment (via bank, check, etc.) should be registered so that invoices are marked as paid. Odoo can also reconcile these if you use bank feeds.
+
+Integration Touchpoints:
+
+    The Inventory Integration means that the Inventory app’s delivery orders are linked to the sales orders. Users in the warehouse can see the source document (the SO) and who the customer is, and salespeople can see delivery status. If a delivery order is not validated, the sales order remains in status To Deliver. Once delivered, if the policy is deliver-and-invoice, you can proceed to invoice.
+
+    The Accounting Integration means that when you create an invoice from a sales order, it goes into the Accounting app as a draft invoice (in Odoo 18, the Invoicing app handles customer invoices). Sales Order references are noted on the invoice. When the invoice is paid, the sales order will show as paid (through the Invoice Status field which moves from Not invoiced to Fully Invoiced and payments logged).
+
+After-Sales:
+
+    If the customer returns products, Odoo can handle returns and credit notes. A delivery can be reversed (return picking) and a Credit Note (negative invoice) can be issued via Accounting > Customer Invoices > Add Credit Note, or via the sales order’s Return option if using the returns feature
+    cybrosys.com
+    . Odoo 18 even has an option to process a return and exchange in one go
+    cybrosys.com
+    .
+
+    If an order is cancelled after confirmation, best practice is to cancel the delivery (if not delivered yet) and cancel any draft invoice or issue a credit note if already invoiced. Odoo will update the order’s state accordingly (a fully cancelled order would typically have no delivered/invoiced quantities).
+
+Delivery/Invoice Addresses: As mentioned, you can set different addresses for shipment and billing on the sale order
+odoo.com
+odoo.com
+. The packing slips and invoices generated will use those addresses appropriately (the invoice document will show the invoice address, the delivery slip will show the delivery address).
+
+Tip: Use the Delivery Methods feature (under Inventory > Configuration > Delivery Methods) if you want to integrate shipping carriers (UPS, FedEx, etc.) to compute shipping costs and generate labels directly from Odoo. In Sales, you can then add a delivery method to a sales order and even invoice shipping costs to the customer. Odoo’s delivery integration can automate fetching rates and printing shipping labels, further streamlining the fulfillment process.
+
+In short, the Sales module, Inventory, and Accounting work hand-in-hand: confirm the sale, deliver the product, invoice the customer, register payment – each step triggering the next. Odoo keeps the sales order updated with delivered and invoiced quantities
+odoo.com
+and provides warnings if you try to invoice without delivering under certain policies
+odoo.com
+, ensuring you follow the correct process.
+Integration with Other Modules (Inventory, Accounting, CRM, Purchase, Website/eCommerce)
+
+One of Odoo’s greatest strengths is the seamless integration between applications. The Sales module does not operate in isolation – it exchanges information with several key modules, which helps eliminate data duplication and automate cross-department workflows. Here’s how Sales integrates with each mentioned module:
+
+    Inventory (Warehouse Management): The Sales app and Inventory app are tightly connected. Every physical product sale (stockable product) in Sales generates a corresponding delivery order in Inventory for fulfillment
+    odoo.com
+    . The sales order acts as the demand source for stock moves. Inventory availability can be seen on the sales order (you’ll get an automatic warning if not enough stock on hand, or you can even prevent sale of not-on-stock items with the right settings). If you have advanced inventory routes like drop shipping or make-to-order:
+
+        Drop Shipping: If a sales order line is configured with a route "Drop Ship", confirming it will create a Purchase Order to the vendor (in the Purchase app) shipping directly to your customer. This is an advanced route that connects Sales and Purchase (see below).
+
+        Reordering: Sales can trigger reordering rules. If you don’t have sufficient stock, Odoo can automatically generate a procurement that results in a Purchase Order or Manufacturing Order depending on product configuration. This way, Sales drives the supply chain.
+
+    Inventory also sends information back to Sales: once a delivery is done, the Sales order updates delivered quantities
+    odoo.com
+    . If a delivery is delayed or backordered, the salesperson can see that and communicate with the customer. Integration ensures that stock levels are always accurate after sales, and you can even reserve products for specific orders (like for pre-sales or made-to-order scenarios).
+
+    Accounting (Invoicing): The integration with Accounting means every Sales Order can produce a Customer Invoice (or several invoices for partial deliveries or milestones) in the Accounting module
+    odoo.com
+    . Customer master data is shared with Accounting, so addresses, payment terms, and fiscal positions flow into invoices. When an invoice is validated, it will record revenue and receivables in the ledger. If you record a payment, the invoice (and indirectly the related sale order) is marked paid. The Sales module provides convenient access to create or view invoices from the sales order form (via the Invoice smart button). Also, product settings like taxes come from Accounting configuration – when you add a product to a quote, the tax applied is coming from that product’s tax setup (which is defined in the accounting/tax module). This ensures that the quotes and orders always have the correct tax calculations (VAT, sales tax, etc.) consistent with your accounting settings
+    odoo.com
+    . Additionally, if you have analytic accounting or revenue recognition (deferred revenue) needs, those analytic tags or deferred revenue setups on products will carry through the sale to the invoice for proper accounting (this is more on the accounting side, but driven by the sale).
+
+    CRM: The Customer Relationship Management module covers the pre-sales pipeline (leads and opportunities). CRM and Sales work in tandem: CRM focuses on potential sales (opportunities) and once an opportunity is mature, you create a Quotation directly from it (as described in Customer Linking)
+    odoo.com
+    odoo.com
+    . The New Quotation button in CRM effectively uses the Sales module to generate a quote for that opportunity, and it links the two records. After the quote is sent and the customer confirms, you mark the opportunity Won and a sales order is born. CRM also can record lost opportunities, reasons, etc., which is valuable feedback for sales strategy. Sales teams are configured in CRM (under CRM > Configuration > Sales Teams), and opportunities and quotations both can be associated with a sales team and salesperson. This allows performance analysis per team or rep across both funnel (CRM) and actual sales (Sales orders). Forecasting is another integration: CRM can do revenue forecasting based on expected closing of opportunities, and once they become real sales, the actuals can be compared. In short, CRM provides the pipeline and negotiation stages, while Sales takes over when it's time to finalize pricing and orders. Both use the same customer and product data, ensuring no re-entry is needed.
+
+    Purchase: Sales and Purchase are two ends of the supply chain. They interact in cases like Drop Shipping or Make To Order. For example, if you do not stock a product and prefer to fulfill a customer order by directly ordering from a supplier to ship to the customer, you can configure the product’s route as drop ship. Then, when a sales order is confirmed, Odoo automatically generates a Request for Quotation / Purchase Order to your vendor with the customer’s address as the delivery point (the vendor will ship directly to your client)
+    odoo.com
+    . You as the salesperson can monitor this in the sales order (it will show a drop ship link). Similarly, if you have a Make-to-Order route (where confirmation of a sale creates a procurement), Odoo can create a Purchase Order or Manufacturing Order to fulfill that demand. Even without these automatic routes, Sales order data can be used in procurement planning (e.g. reordering rules can consider forecasted sales). If you manually create a purchase for a product that’s needed for a sale, you can even link the Purchase Order to the Sale Order (by specifying the analytic or origin). Moreover, when supplier bills (vendor bills) come in for dropshipped items, you can cross-check against the sale. Essentially, Sales drives demand that Purchase fulfills. This integration prevents stockouts and ensures customer orders are fulfilled by timely procurement.
+
+    Website/eCommerce: If you have the Odoo Website and eCommerce modules, they integrate seamlessly with Sales. The online shop on your website uses the same product catalog and pricelists configured in Sales. When a customer places an order on the website (e.g. an online sale), Odoo automatically creates a Sales Order in the Sales module with the status Quotation or directly Sales Order (depending on whether you allow checkout without manual confirmation) – typically, online orders are confirmed automatically if paid. Those orders will appear in your Sales app just like any manually created sales order. They’ll carry a reference to the website/online order. You can then process delivery and invoicing as usual. Any online payment made at checkout is recorded just as described earlier, and the order will be confirmed and paid. The Website module also provides a Customer Portal where customers can view their quotations, sales orders, and even invoices and delivery status. When you send a quotation by email, it includes a link to this portal view. Customers can sign and pay online via the portal
+    odoo.com
+    odoo.com
+    , feeding back into Sales workflow.
+
+    Additionally, some features like Optional Products on quotes were originally eCommerce-oriented – if you use quotation templates with optional upsell products, customers on the portal can pick those optional products before accepting the quote, which can increase average order value
+    odoo.com
+    . The integration with website also means you can publish products to the website directly from the product form in Sales (a Publish toggle). Promotion programs and coupons can be used by online customers during checkout just as they can be applied by a salesperson in a back-end sales order
+    odoo.com
+    .
+
+    If you run an eCommerce, the Sales module is essentially your backend for online orders. You might never manually create a quotation; instead, you manage orders coming from the site. Stock levels shown on the website come from Inventory, and once an order is confirmed through the site, your warehouse can ship it and Accounting can invoice it – all in one system.
+
+    Other Integrations: The Sales module also connects with Manufacturing if you sell made-to-order products (a sale can trigger a Manufacturing Order for the product). It ties into Project if you sell services that require project task tracking (confirming a sale can create a project or task). It links with Sign (Odoo Sign) if you need more formal signatures on PDF contracts. And it integrates with Marketing apps if you want to automate follow-ups or campaigns for quotations (for instance, sending an automated email a week after a quote is sent). These are beyond the core scope of Sales, but it's good to know the ecosystem: a sale can trigger many things downstream.
+
+In summary, Odoo ensures that Sales is not an island: when you confirm a sale, inventory is updated and purchasing can be triggered; when you deliver, accounting knows to invoice; when you enter a new opportunity, you can quote them in seconds and that quote flows to an order on acceptance. The data consistency and automation between modules help reduce manual work and errors, providing a single source of truth from lead to cash.
+Workflow Automations and Access Rights
+
+Workflow Automations: Odoo 18 Sales includes several automation features that streamline your sales workflow and reduce manual tasks:
+
+    Scheduled Activities: On any quotation or sales order, you can schedule follow-up activities (calls, emails, meetings) to ensure you stay on track with the customer. While this is a general Odoo feature, it’s extremely useful in sales to automate reminders. For example, if a quote is sent and not yet accepted, you might have a rule (or just manually) schedule a Follow-up Call activity for 3 days later. The system will remind the salesperson on that day to check in with the customer. Activities appear in the Activities view and can be managed via the CRM pipeline as well
+    cybrosys.com
+    .
+
+    Quotation Expiry and Alerts: By setting quotation validity deadlines (either default or per quote), Odoo can automatically mark quotations as expired when the date passes, and you can filter them. This encourages salespeople to either follow up or archive expired quotes. Additionally, Sales warnings (if configured) will automatically pop up alerts — for instance, if a customer is marked as having overdue payments, a warning can appear on their new sales orders to inform the salesperson.
+
+    Automated Emails: Odoo 18 introduced the ability to schedule emails, like a “Send Later” feature for quotations. When sending a quote by email, you can choose to send it now or schedule the email to be sent at a specific date/time (say, Monday morning). This is useful if you prepare quotes off-hours or want to time your communication. Also, Odoo 18 has an AI assist for emails – an AI button in the email composer can generate suggested email content based on context
+    cybrosys.com
+    , potentially saving time drafting follow-ups (the user can edit the AI-suggested text before sending).
+
+    Automatic Order Confirmation: As discussed, using online signature or payment will automatically confirm orders without intervention. This is an automation that turns customer self-service actions into back-end workflow. For example, a customer e-signing triggers an automated status change to Sales Order and triggers any delivery creation and so forth
+    odoo.com
+    .
+
+    Locking and Validation Workflows: The Lock Confirmed Sales feature is a kind of automation that ensures process discipline
+    odoo.com
+    . Once enabled, as soon as an order is confirmed, Odoo will lock the record. This prevents accidental editing of a confirmed order (which could desynchronize it from the invoice or delivered quantities). It’s an automated guardrail that many companies enable for data integrity. If changes are needed (like adding a line after confirmation), a manager can unlock the order (requires proper access rights).
+
+    Commissions and Sales Teams: If you use the Commissions feature, some parts of that workflow can be automated – for example, you might generate commission statements or reports each month for each salesperson based on confirmed invoices
+    cybrosys.com
+    . While not fully automated out-of-the-box, Odoo provides the data so that a scheduled job or a simple manual step can produce commission invoices or payout reports.
+
+    Subscription Automations: In the Subscriptions app, you can configure automated actions like sending renewal reminders or even automatically closing subscriptions that haven’t been paid after X days
+    odoo.com
+    . You can also automate generating the next invoice for a subscription via scheduled jobs. These automations ensure recurring revenues are not missed.
+
+    Integration Automation: Many of the integrations mentioned also act like automations. E.g., confirming a sale automatically triggers delivery orders, and finishing a delivery can automatically mark an order as delivered and ready to invoice. Another example: If using Billing Milestones (e.g. in services projects), when a project milestone task is marked done, it can automatically issue an invoice for that milestone (with the proper configuration in Sales for service products set to milestone invoicing)
+    odoo.com
+    . Odoo’s framework is full of these domino-effect automations that keep the workflow moving forward without someone re-entering data.
+
+In practice, you should identify repetitive tasks in your sales process and see if Odoo can automate them either through built-in features or using Odoo Studio or server actions. For example, you could create a server action to auto-send a thank you email one week after an order is delivered, etc. Odoo also supports automated follow-ups for payments (in Accounting) and lead automation (in CRM, like lead assignment rules), which indirectly benefit the sales workflow.
+
+Access Rights: Managing who can do what in the Sales module is important to maintain control and security. Odoo uses a role-based access control system. The main predefined roles (access rights) for Sales users are:
+
+    Sales User (Own Documents Only) – This user can only see and manage their own quotations and orders (those where they are the salesperson). They cannot see other salespersons’ orders
+    odoo.com
+    . This is useful for having a sales team where each member has a personal pipeline.
+
+    Sales User (All Documents) – This user can see and edit all sales orders and quotations in the system (for the sales module)
+    odoo.com
+    . They still don’t have configuration rights, but they can collaborate and cover for each other. A typical salesperson might have this if the company is small or trust level is high.
+
+    Sales Administrator – This is typically the Sales Manager role. They have full permissions on Sales: they can see all orders, and also access configuration menus (like setting up products, pricelists, etc.). They can also approve or perform actions that regular users might not (for example, unlocking orders or offering exceptional discounts if there were rules around that).
+
+These roles can be set per user by an Administrator. To set sales access rights, go to Settings > Users & Companies > Users, open a user’s form, and under Access Rights tab, find the Sales section. You’ll see a dropdown with options like User: Own Documents Only, User: All Documents, Administrator (or Manager)
+odoo.com
+. Select the appropriate level for that user and save
+odoo.com
+. Only users with Administration rights (typically somebody with Settings or Access Rights privileges) can change this.
+
+What these rights mean in daily use:
+
+    A Sales User: Own Documents will only see their own records in the Sales app. For example, the Quotations list will automatically filter to My Quotations. They cannot remove that filter to spy on others. If they try to manually search, the system will restrict it. This is achieved by record rules behind the scenes. This is great for competitive environments or to compartmentalize data.
+
+    A Sales User: All can work on any quotation. They might still be restricted from some high-level configuration but generally can do everything needed to process a sale.
+
+    A Sales Administrator/Manager can do things like modify Sales settings, create teams, change order locks, etc.
+
+Additionally, Odoo has an Administration access setting with Settings or Access Rights level, but that’s more global. For most sales teams, you assign the Sales-specific role and possibly also CRM roles. CRM has similar own/all distinction so that an "Own Documents" salesperson in Sales usually is also "Own" in CRM to only see their leads.
+
+Access Rights Best Practices: Only give administrative rights to those who need to change configuration (like discount policies, product configurations, etc.). Limit normal salespeople to their own documents if you want to prevent them from seeing each other’s opportunities or orders (could be for privacy or competitive reasons). If you use commission plans, often you’d restrict visibility of those to managers. Odoo’s default groups cover most needs, but if you have a special case (e.g., a user who should only create quotations but not confirm them, or a user who should only see reports), you may need to create a custom security group.
+
+Always test user profiles by logging in as a test user with that role to ensure they can access what they need. For example, a User: Own Documents should still see customers (usually they can see all customers by default, but you can also restrict contacts by user or team if needed with additional rules).
+
+Remember that access rights also control menu visibility. A regular sales user won’t see the Configuration menu in Sales, whereas an admin will. Also, things like the ability to approve discounts beyond a certain percentage can be implemented by custom modules or workflows, but out-of-the-box, it’s mostly based on these read/write rights.
+
+In sum, use the built-in roles to enforce your internal controls: sales managers oversee everything, salespeople manage their pipeline, and nobody outside (e.g. someone from another department) can accidentally interfere with sales data unless you intentionally give them access (like giving a customer service rep also Sales access to create orders, etc.).
+Reporting and Sales Performance Analysis Tools
+
+Analyzing sales performance is vital for decision-making. Odoo provides powerful reporting tools within the Sales module to slice and dice your sales data, identify trends, and track KPIs. The main tools available are the Sales Dashboard, various Views (graph, pivot, list), and predefined reports.
+
+Sales Dashboard: In the Sales app under the Reporting menu, there may be a Dashboard and a Sales Analysis sub-menu
+cybrosys.com
+. The Dashboard gives a quick overview of key sales metrics. In Odoo 16 (and similarly in 18), clicking Reporting > Sales would open a window showing a pivot or graph view of sales orders with some default measures (like total untaxed amount) grouped perhaps by month or sales person
+cybrosys.com
+cybrosys.com
+. Odoo's dashboards are often interactive, allowing you to click on data points to drill down.
+
+Pivot Table Analysis: The Sales Analysis view (Reporting > Sales) typically defaults to a pivot table of sales orders (or order lines) with measures such as Untaxed Total (sum of revenue) displayed
+cybrosys.com
+. You can add many measures to the pivot:
+
+    Number of Quotations or Orders,
+
+    Total quantity sold,
+
+    Total invoiced amount,
+
+    Discounts given,
+
+    Margin (if cost is recorded),
+
+    Weight/Volume (if relevant),
+
+    etc. Odoo lists a variety of measures in the Measures drop-down
+    cybrosys.com
+    , including count of lines, discount %, discount amount, gross weight, margin, quantities (ordered, delivered, invoiced, to deliver, to invoice), untaxed amounts, etc. You can select one or multiple measures to view at once.
+
+You can then use the pivot’s Group By functionality to arrange the data. Common groupings:
+
+    by Salesperson,
+
+    by Sales Team,
+
+    by Customer,
+
+    by Product or Product Category,
+
+    by Order Date (year, quarter, month, etc.),
+
+    by Country or any other field available
+    cybrosys.com
+    .
+
+For instance, you might group by Salesperson and then by Month to see each salesperson’s monthly sales totals. The pivot is highly flexible: you can expand and collapse levels, and use the Filters to restrict data (e.g. filter to a specific product line or to confirmed orders only)
+cybrosys.com
+cybrosys.com
+. There are some default filters like Quotations vs Sales Orders or date ranges (this varies by version)
+cybrosys.com
+, and you can add custom filters on any field.
+
+Graph Views: You can switch to a graph representation of the same data by clicking the graph icon. Odoo supports bar charts, line charts, and pie charts for sales data
+cybrosys.com
+. For example:
+
+    A bar chart of revenue by month,
+
+    A pie chart of sales by product category,
+
+    A line chart of number of orders over time.
+
+In graph view, you can still group by additional dimensions (one on the X-axis and one as different series, for example). You can toggle between bar, line, and pie using the icons at the top
+cybrosys.com
+. Graph view also supports stacked mode or unstacked, and a cumulative option if you want running totals
+cybrosys.com
+. This makes it easy to visualize trends, like the cumulative sales over the year or the breakdown by team.
+
+Cohort and Dashboard Views: In some cases (perhaps not by default in Sales), Odoo can also produce cohort analysis or you can create custom dashboard items. But by default, pivot and graph should cover most needs.
+
+Excel/Spreadsheet Integration: Odoo 18 allows you to insert pivot data or graph data into an Odoo Spreadsheet, which is a powerful feature for building live dashboards. On the pivot view or graph view, there is an “Insert in Spreadsheet” button
+cybrosys.com
+. Clicking this lets you either create a new spreadsheet or insert the data into an existing one. This spreadsheet can then be configured (adding formulas, combining with data from other sources, etc.) and even placed on a dashboard. This effectively replaces the need to export to Excel in many cases, since you can do your analysis right in Odoo and have it auto-refresh. If you still need to, you can always export pivot data to Excel as well (via the Export menu).
+
+Predefined Reports: Apart from the interactive analysis views, Odoo might offer some standard PDF reports, though in Sales the main ones are quotations/orders themselves. However, you can leverage Studio or custom modules to create fancy sale reports if needed. Most users find the real-time pivot/graph more useful than static reports, as you can adjust them on the fly. If needed, you can save custom filters or groupings as Favorites (using the star menu) and even schedule those to be sent by email. For example, you could save a favorite pivot view “This Month’s Sales by Team” and then via the reporting module schedule that to be emailed to managers monthly.
+
+KPIs to watch: With Odoo’s reporting you can track metrics like:
+
+    Total Sales (revenue) in a period,
+
+    Number of Quotes sent vs Orders confirmed (hit rate),
+
+    Average Order Value,
+
+    Sales by product category or product to identify best sellers,
+
+    Sales by region or country (if customers have country on address, grouping by Country can show that),
+
+    Salesperson performance (actual sales vs targets, if you use the CRM to set targets those can be compared in reports),
+
+    Pipeline to sales conversion (through CRM reports like Expected Revenue vs Real Revenue).
+
+In Odoo 18, under CRM > Reporting, there are pipeline analysis reports (pipeline by stage, win/loss, etc.)
+cybrosys.com
+which complement the Sales module’s focus on actual orders. Combined, you get a full picture from leads to revenue.
+
+Using Filters and Groupings: The user interface provides quick filter options such as My Sales (to see only your orders), Sales of Last 7 Days, Sales this month, etc., or you can add custom date filters. You can group by fields like Order Status (to separate quotations vs orders), which is useful if you want a report that includes pipeline quotes in draft vs actual orders. For more advanced needs, Odoo’s Studio or OWL framework could even create custom reports, but often the pivot is enough.
+
+Tip: If you want to analyze profitability, ensure you record Cost on your products and enable margin on sales. Then you can include Margin as a measure in the pivot to see profit per order or product
+cybrosys.com
+. Margin = (Sales Price - Cost) * quantity, and you can also see Margin % if you derive it or possibly as a custom measure.
+
+Another useful analysis is using the Cohort or Retention analysis if you have subscription sales (for churn rates, etc.), but that’s more under the Subscription app’s reporting.
+
+Lastly, graphics and presentations: You can take screenshots or even use Odoo’s built-in dashboard charts directly in meetings. If a sales manager wants to review performance, they can live drill down into any figure during a meeting to answer questions (for example, click the bar for June sales to see which orders contributed to it
+cybrosys.com
+).
+
+Overall, the Sales module’s reporting tools are interactive and cover most analysis needs:
+
+    Pivot for tabular data (with totals, subtotals).
+
+    Graphs for visual trends (bar/line for trends, pie for distribution).
+
+    Filters for zooming in (e.g. one product line, one sales team).
+
+    Grouping for structure (e.g. by month, then by salesman).
+
+    Spreadsheet integration for advanced or combined reporting (like blending sales and expense data for profitability analysis on a single sheet).
+
+By regularly reviewing these reports, sales managers can identify which products are selling well, which customers are top buyers (group by customer), who on the team is performing best, and where there might be bottlenecks or drop-offs (e.g. many quotes but low conversion in a certain segment). All of this information is at your fingertips with Odoo 18’s Sales analytics
+cybrosys.com
+cybrosys.com
+.
+Best Practices and Tips for Effective Sales Management
+
+To wrap up, here are some best practices and tips to get the most out of Odoo 18 Sales:
+
+    Leverage Quotation Templates: If your quotes often include the same sets of items or follow a standard format, set up Quotation Templates
+    odoo.com
+    . This will speed up the creation of new quotations and ensure consistency. For example, a services company might have a "Implementation Package" template pre-loaded with typical services. It saves time and ensures nothing is forgotten. As a bonus, templates can also define the quotation validity period and include preset notes or terms.
+
+    Define Clear Validities and Deadlines: Use the quotation Expiration Date feature to your advantage. Setting a reasonable deadline (e.g. quote valid for 14 days) creates urgency for the customer to respond
+    odoo.com
+    . Odoo can track expired quotes, so salespeople know which ones went stale. You can even filter for quotations approaching expiration and send reminders. This practice improves your quote-to-order conversion rate by prompting customers to act timely
+    odoo.com
+    .
+
+    Use Online Signature and Payment to Accelerate Sales: Enabling online order confirmation (signature or payment) can significantly shorten the sales cycle. Customers appreciate the convenience of confirming instantly. Especially for eCommerce or quick B2B transactions, being able to click Sign & Pay directly on the quote eliminates friction
+    odoo.com
+    odoo.com
+    . It also reduces manual work on your side – no need to chase signatures or check bank transfers for initial payments. Just be sure to configure your payment gateways properly and communicate to customers that they can use the portal.
+
+    Communicate Through the Portal: Odoo’s customer portal centralizes the communication. Encourage customers to use the portal to view quotes, sign, pay, and even see delivery tracking or invoices. This self-service reduces back-and-forth emails. You can also embed a customer preview link in your quote emails (which Odoo does by default). When customers confirm via portal, you get automatic updates and they get transparency.
+
+    Keep Customer Data Clean and Complete: Always select or create the proper customer on a quotation (avoid leaving it unlinked). Merge duplicates to avoid confusion
+    cybrosys.com
+    . Input email addresses so that electronic communication is smooth. Use the Contacts’ opportunities smart button or sales smart button to quickly see everything related to a customer. Also categorize customers (industry, tags) as needed; this can help in reporting and targeting (e.g., see sales by industry).
+
+    Upsell and Cross-Sell: Odoo provides multiple ways to upsell. You can add Optional Products to quotes which customers might choose to add on
+    odoo.com
+    . Also, use Quotation Templates with optional lines or the eCommerce cross-selling features if applicable. The Discount & Loyalty programs can also incentivize larger purchases (e.g. "get $50 off if you spend $500" promotions). Utilize these tools to increase average order value. The system’s ease of adding products (product catalog, etc.) makes it easy for salespeople to suggest additional items.
+
+    Discount Strategically: If you enable discounting, monitor how it’s used. You can set an internal guideline or approval process for discounts above a threshold. Even though Odoo doesn’t natively block high discounts for a normal user, you can implement a business process (like salespeople must get manager approval for >20% discount). Use the reporting to analyze discount % given by each salesperson
+    cybrosys.com
+    – if someone is giving too much away, it will show in the Discount Amount or % measures. Promotions (coupons) can be a better way to control discounts as they are explicit and time-bound.
+
+    Manage by Exception with Alerts: Activate Sales Warnings for problematic scenarios. For example, set a warning on a customer who habitually pays late or on a product that is being phased out
+    odoo.com
+    . The salesperson will see a pop-up or warning banner when adding that customer/product to a quote, prompting them to take appropriate action (maybe require prepayment for that customer, or inform the customer the product is last stock). This proactive approach prevents issues downstream.
+
+    Take Advantage of Commissions and Sales Teams: Motivating your sales team is easier if you track their performance. Use the Sales Team feature (via CRM app) to organize salespeople into teams with targets. You can input monthly or quarterly targets and then use the dashboard or pivot to see attainment. If you enabled Commissions, make sure to configure commission plans properly (e.g., 5% on paid invoices over a certain amount, etc.)
+    cybrosys.com
+    and regularly generate commission reports
+    cybrosys.com
+    . Odoo 18 even has a built-in Commission report under Sales > Reporting > Commissions
+    cybrosys.com
+    . A best practice is to review this monthly with the team. It not only ensures salespeople are rewarded, but it also gives insight into who is contributing what.
+
+    Utilize Activities and Follow-ups: Never let a quotation fall through the cracks. On each important quotation, schedule a next activity (a phone call or email follow-up). Odoo’s activity system will then remind you on your dashboard of things to do each day. You can standardize this by creating an activity type for "Quotation Follow-up". This ensures every quote is followed by a call in X days if not answered. As a manager, you could monitor that quotes in Quotation Sent status have future activities scheduled. This kind of discipline can raise conversion rates. Also, consider using Email Templates for follow-ups (maybe a gentle reminder email template you can send with one click).
+
+    Monitor Key Metrics Regularly: Use the Sales reporting to keep tabs on sales performance. For example, check weekly or monthly how you are doing against targets. Identify if certain products are trending up or down. Odoo’s graph view can show sales trends – e.g., if you see a dip in orders this month, you can investigate why and take action (maybe launch a promotion if pipeline is low). Also watch the conversion rate: how many quotations convert to orders. If it’s low, maybe the team needs to adjust pricing or improve follow-up. Odoo’s integrated view (you can see quotes that are still open vs won/lost) will help here.
+
+    Feedback Loop from Lost Opportunities: When marking an opportunity as Lost in CRM or cancelling a quotation, always input a reason. Configure Lost Reason options (like Price too high, Went with competitor, Postponed) in CRM. This data is valuable. You might find, for instance, many losses due to price – which could prompt reviewing your pricing strategy or adding more value in the offer. Or if a particular competitor is beating you often, you may adjust your sales pitch. Odoo can report on lost reasons in CRM reporting. Best practice is to not neglect this – it turns failures into lessons, improving future success.
+
+    Keep Odoo Data Updated in Real-Time: Encourage the team to record things as they happen. If a customer gives verbal confirmation, confirm the quotation in Odoo immediately (don’t wait). If a delivery is done, make sure the Inventory team marks it delivered promptly, so invoicing isn’t delayed. Odoo works best when it reflects reality in real-time. This way, any other user (e.g. a manager or another department) can rely on the system for current info (for example, customer calls and asks "when will I get my order?" – a quick look at Odoo should show if it’s delivered or still pending). Timely data entry also means your reports are up to date.
+
+    Train and Empower Your Team: Finally, ensure the sales team is comfortable with the system. Show them how to use the customer portal links, how to add optional products, how to read the margin on an order, etc. The easier it is for them, the more they’ll use Odoo’s advanced features to close deals. Also set up access rights correctly: salespeople should have the right level of access to do their job but not be over-privileged. As mentioned, typically User: All Documents for general sales users is fine in an open culture; use Own Documents if you need siloing
+    odoo.com
+    . And make someone sales manager who can administer products and prices (with maybe a backup person).
+
+By following these practices – utilizing Odoo’s features for efficiency and maintaining good data hygiene – you’ll manage your sales pipeline more effectively, close more deals, and have clear visibility on your sales performance. Odoo 18’s Sales module, when used to its potential, becomes a powerful tool to drive sales operations and growth

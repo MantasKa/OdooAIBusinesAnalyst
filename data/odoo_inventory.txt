@@ -1,0 +1,810 @@
+Odoo 18 Inventory Module User Manual
+Initial Setup and Configuration
+
+Before managing inventory in Odoo 18, ensure the Inventory module is installed and properly configured. By default, Odoo creates one warehouse (with your company address) in a new database
+
+
+. You can add multiple warehouses by navigating to Inventory ‣ Configuration ‣ Warehouses and creating a new one
+
+. Key initial setup steps include:
+
+    Activate Storage Locations and Multi-Step Routes: Go to Inventory ‣ Configuration ‣ Settings. Under the Warehouse section, enable Storage Locations (to allow multiple stock locations within warehouses) and Multi-Step Routes, then click Save
+    numla.com
+    . Enabling Multi-Step Routes also activates the Storage Locations feature automatically
+    numla.com
+    . This allows advanced warehouse flows (like receiving goods in stages or using pick-pack-ship). For example, with multi-step enabled, you can configure each warehouse to use one-step, two-step, or three-step receipt/delivery processes
+      
+    .
+
+    Warehouse Configuration: After enabling the above, configure each warehouse’s routes. Go to Inventory ‣ Configuration ‣ Warehouses, open a warehouse, and in the Warehouse Configuration tab choose how incoming and outgoing shipments are handled (e.g. one-step, two-step, or three-step)
+    
+    . By default, Odoo uses one-step: purchases are received directly into stock, and deliveries ship directly from stock
+    
+    . You can change these to multi-step if needed (for example, receive into an Input location then to stock, or add quality control steps).
+
+    User Access Rights: Ensure users who will manage inventory have the proper access rights (typically the Inventory User/Manager role in Odoo, configured in Settings ‣ Users). This grants them access to inventory operations and configuration.
+
+    Other Settings: Depending on your needs, you may configure additional options in Inventory ‣ Configuration ‣ Settings. For instance, under Traceability, enable Lots & Serial Numbers if you plan to track items uniquely (e.g. by serial number or batch)
+    
+    . Under Barcode, you can enable the Barcode Scanner and Stock Barcode Database features if you will use barcode scanning for operations
+    
+    . (These will be explained in later sections.) Remember to click Save after changing settings.
+
+Overview of Features and Interface
+
+Odoo 18’s Inventory module is a full warehouse management system (WMS). It uses a double-entry inventory model, meaning every stock move is an in/out pair affecting source and destination locations, ensuring accurate traceability of stock. The module’s interface is organized into several main menus and features:
+
+    Inventory Dashboard: When you open the Inventory app, you see an overview of operation cards (kanban style) such as Receipts, Delivery Orders, Internal Transfers, etc. Each card shows the number of pending operations. This dashboard gives a quick glimpse of activities to process (e.g. how many receipts are waiting to be done).
+
+    Operations Menu: Under Inventory ‣ Operations, you can access day-to-day documents:
+
+        Transfers (all stock moves),
+
+        Receipts (incoming shipments from vendors),
+
+        Delivery Orders (outgoing shipments to customers),
+
+        Internal Transfers (moves between locations or warehouses),
+
+        Manufacturing (if Manufacturing app is installed, production-related transfers appear here),
+
+        Inventory Adjustments (for stock counts and corrections, also accessible via Operations ‣ Physical Inventory
+        
+        ).
+
+    Master Data (Products & Locations): Under Inventory ‣ Products, you manage Products, Product Variants, and Product Categories. Under Configuration, you manage Warehouses, Locations, and routes. These will be detailed in later sections. Locations can be viewed hierarchically (each warehouse has sub-locations like stock, input, output, etc.). Odoo defines several location types (internal, vendor, customer, inventory loss, production, etc.) to categorize the nature of each location
+    
+    
+    .
+
+    Reporting Menu: The Inventory app provides reporting and analysis tools under Inventory ‣ Reporting (e.g. Stock Report, Forecasted Inventory, Inventory Valuation, etc.). These help monitor stock levels, product movements, and value (discussed in a later section).
+
+    Integration: The Inventory module seamlessly integrates with other Odoo apps. For example, confirming a Purchase Order in the Purchase app generates a corresponding Receipt in Inventory to bring products into stock
+    
+    
+    . Likewise, confirming a Sales Order in the Sales app generates a Delivery Order to ship products out of inventory
+    
+    . The Inventory app’s interface uses smart buttons on related documents (e.g. a Receipt button on a purchase order, a Delivery button on a sales order) to jump directly to the inventory operation.
+
+Overall, the interface is designed for efficiency: you can navigate from a product to its on-hand quantity, from an order to its picking operation, and use filters/search to find specific inventory transactions. The next sections will dive deeper into how to configure and use these features.
+Managing Warehouses, Locations, and Routes
+
+Warehouses: In Odoo, a warehouse represents a distinct physical site or building where stock is stored (e.g. a warehouse, store, or distribution center)
+
+. Every database starts with one warehouse, but you can manage multiple. Each warehouse has its own stock operations and address. To create or edit warehouses, go to Inventory ‣ Configuration ‣ Warehouses. In the warehouse form, you can set:
+
+    Warehouse Name and Short Name (code) – the short code will prefix stock locations and documents (e.g. “WH” for Warehouse)
+    
+    .
+
+    Address – the location address (if different from company).
+
+    Company – if using multi-company, which company the warehouse belongs to
+    
+    .
+
+    Incoming/Outgoing Shipments configuration – appears if Multi-Step Routes is enabled. Here you choose the number of steps for receipts and deliveries (1, 2, or 3 steps)
+    
+    . For example, set Incoming = “Receive goods in input and then stock (2 steps)” to use a two-step receiving process
+    numla.com
+    . Odoo will automatically create the intermediate locations (like “WH/Input” and “WH/Stock”) when you enable multi-step routes
+    numla.com
+    .
+
+    Other options like Resupply or Manufacture in this warehouse (if manufacturing or multi-warehouse features are used)
+    
+    
+    .
+
+Storage Locations: Locations are sub-areas inside warehouses (shelves, zones, aisles, or even virtual locations) used to organize inventory
+
+. To manage locations, go to Inventory ‣ Configuration ‣ Locations. By default, only internal locations are shown until Storage Locations are enabled. Each location has:
+
+    A Location Name and Parent Location (hierarchy). For example, “Stock” might be a child of “WH” (the warehouse’s parent location).
+
+    Location Type: determines the behavior
+    
+    :
+
+        Vendor Location: represents supplier side (goods coming from vendor are considered from a vendor location; not counted as your stock).
+
+        Customer Location: represents the customer side (goods delivered to customers move to a customer location, leaving your stock)
+        
+        .
+
+        Internal Location: an actual storage place in your warehouses. Items here count as on-hand inventory
+        
+        .
+
+        Inventory Loss: used for adjustments or scrapping – it’s a virtual sink for missing or scrapped inventory
+        
+        .
+
+        Production: used in manufacturing for consuming raw materials and producing finished goods
+        
+        .
+
+        (Also Transit or View types exist – view is a grouping location that should not hold stock directly
+        
+        .)
+
+For example, when you do an inventory adjustment, Odoo uses an Inventory Adjustment (inventory loss type) location as the destination for removed stock to account for discrepancies
+
+. When you scrap damaged goods, they move to a Scrap location (also an inventory loss type).
+
+Inventory Routes: Routes define paths that products follow through your warehouse(s) and how procurement is done. Routes consist of one or more rules (pull rules, push rules) that automate stock moves. In Odoo 18, common routes include dropshipping, cross-docking, and multi-step warehouse flows
+
+
+. For instance:
+
+    The default 1-step route for deliveries simply moves product from Stock to Customer in one go. A 2-step delivery route might first move product from Stock to an Output area, then to Customer (with a pull rule triggering the second step)
+    
+    
+    .
+
+    Push rules push incoming items to a specific location automatically. Pull rules create demand-driven moves (e.g. a sales order pulls stock from warehouse)
+    
+    
+    .
+
+You usually configure routes when you have advanced logistics needs:
+
+    To enable using routes, ensure Multi-Step Routes is active (as done in initial setup). Pre-configured routes then become available. You can view a warehouse’s pre-set routes under the warehouse form’s configuration tab (for incoming and outgoing)
+    
+    
+    . For example, for outgoing you can choose one-step, two-step (pick/ship), or three-step (pick/pack/ship) deliveries.
+
+    Custom Routes: Go to Inventory ‣ Configuration ‣ Routes to create custom routes if needed. You can specify where the route applies (product, product category, warehouse, etc.) and define the sequence of rules (e.g. procure to a warehouse, then deliver)
+    
+    
+    .
+
+Tip: If you have multiple warehouses, you can configure Resupply routes between them. For example, on a warehouse form you might set "Resupply From" another warehouse, so if one warehouse is out of stock, Odoo can trigger a transfer from the other warehouse to fulfill orders
+
+.
+
+In summary, Warehouses define top-level storage, Locations subdivide storage for precise tracking, and Routes control the logic of how goods move (either within a warehouse or between warehouses/vendors/customers). Setting these up to mirror your real operations (multiple warehouses, sections within warehouses, and the flows between them) is key to using Odoo’s inventory efficiently.
+Product and Product Category Management
+
+Products: In Odoo, any item you stock, sell, or buy is a product. Products are managed under Inventory ‣ Products ‣ Products (this opens the list of all products). To create a product, click New. Key fields on the product form:
+
+    Product Name and optional Internal Reference (SKU).
+
+    Product Type: Odoo offers Storable Product, Consumable, or Service. For inventory, Storable is used for physical goods that you track stock on hand. (Consumables don’t enforce stock tracking – they can be used even if stock is zero; services have no stock at all).
+
+    Product Category: categories are used to group products and define accounting and valuation settings (see below).
+
+    Can be Sold/Purchased: check these if the product is sellable to customers and/or purchased from vendors. If you plan to use reordering (auto procurement), you should enable “Can be Purchased” and set up a vendor for the product.
+
+    Tracking: If lot/serial tracking is enabled system-wide, a field appears to choose how to track this product’s inventory (e.g. No Tracking, By Lot, By Unique Serial Number). (This is available once you’ve enabled Lots & Serial Numbers feature in settings
+    
+    
+    .)
+
+    Quantity On Hand / Forecasted: Smart buttons at the top of the form show current stock, forecasted stock, and provide shortcuts to Reordering Rules and Product Moves for that product.
+
+When creating a new product, make sure to select Product Type = Goods (Storable) and tick Track Inventory (the checkbox appears under Product Type) so that stock movements are registered
+
+
+. If you want Odoo to manage replenishment for this product, also add at least one Vendor under the Purchase tab (for buying) or ensure it has a Bill of Materials if it’s manufactured.
+
+Product Variants: If your product has variants (say size or color differences), you will configure attributes and attribute values. In such cases, one product template can have multiple variant combinations. The inventory tracks each variant’s stock separately. (Variants setup is managed under Inventory ‣ Configuration ‣ Attributes but basic variant stock is visible via Variants smart button on the product.)
+
+Product Categories: Every product is assigned to a category (found under Inventory ‣ Configuration ‣ Products ‣ Product Categories). Categories are not just for organizing products; they carry important inventory valuation and accounting properties. On a Product Category form you will find:
+
+    Parent Category: You can have a hierarchy of categories.
+
+    Routes: You can apply specific routes to all products in the category (for example, if all products of this category should be dropshipped or manufactured to order)
+    
+    .
+
+    Costing Method: How cost is computed for products in this category – options are Standard Price, Average (AVCO), FIFO (First In First Out)
+    
+    . Standard means a fixed cost set on the product (must be updated manually). Average means Odoo will average incoming purchase costs. FIFO means the system will use first-in cost for first-out items (requires automated valuation).
+
+    Inventory Valuation: Manual (Periodic) or Automated (Perpetual). By default, Odoo uses manual valuation, meaning stock value is updated via manual journal entries by accountants
+    
+    . If set to Automated, Odoo will create accounting entries for stock moves (requires that the Accounting app is installed and configured)
+    
+    . You typically set Inventory Valuation = Automated and a costing method for each category if you want real-time inventory accounting.
+
+For example, you might have Category “All Products” with manual valuation, but a sub-category “Retail Goods” with automated FIFO valuation. Once automated, whenever stock enters or leaves, Odoo creates corresponding journal entries so accounting value matches inventory
+
+.
+
+Units of Measure (UoM): Under Inventory ‣ Configuration ‣ Units of Measure, you can manage measurement units (e.g. units, kg, liter, etc.). Each product has a Unit of Measure for stock and a Purchase UoM or Sales UoM if different (Odoo can convert between them if configured). Ensure your products use correct units (especially if you buy in one unit and sell in another).
+
+Packages and Packaging: If you use packages (e.g. tracking boxes or pallets), Odoo can track product moves by package (enable Packages in settings). You can pre-define packaging types (e.g. a box of 12 units) under Configuration ‣ Products ‣ Packages/Packaging if needed.
+
+Practical example – Create a New Product:
+
+    Go to Inventory ‣ Products ‣ Products, click New. Enter “ACME Wooden Chair” as the product name.
+
+    Set Product Type = Storable Product, and tick Can be Sold. Under Purchase tab, tick Can be Purchased and add a vendor (e.g. Wood Supply Co.) with a cost price.
+
+    Choose a Product Category, for example “All/Stockable Products”. If this category uses Standard price, fill in a Cost (under the Inventory tab). If the category is automated, the cost will update from purchases.
+
+    Save the product. Now you can track its stock movements, and use it in orders. The On Hand quantity will be 0 initially. When you receive some into inventory (via a receipt or adjustment), that will increase.
+
+By properly organizing products and categories, you ensure that inventory valuations are accurate and that the system behaves correctly (e.g. applying FIFO costing or automated journals if configured). It’s recommended to review category settings before going live, especially if you need integration with accounting for stock values.
+Stock Operations: Receipts, Deliveries, and Internal Transfers
+
+Stock operations in Odoo are the movements of products into, out of, or within your warehouses. These operations are accessible from Inventory ‣ Operations or via the dashboard cards. The basic operations include:
+
+    Receipts (Incoming Shipments): These are goods coming into your warehouse, usually from a supplier. When you confirm a Purchase Order in Odoo, a receipt is generated automatically in the Inventory module
+    
+    
+    . You can also create receipts manually via Inventory ‣ Operations ‣ Receipts (for example, if receiving stock outside of the purchase process).
+
+    Processing a Receipt: Open the receipt (it will have an ID like WH/IN/xxxx). You will see the source location (usually “Vendors” or a specific vendor location), the destination (e.g. “WH/Stock” for one-step receipts, or “WH/Input” for two-step). The lines show products and quantities expected. To process:
+
+        (Optional) If using lots/serials or packages, assign them on the lines (fields will appear if applicable).
+
+        Click Validate to confirm that the items have been received. In one-step receipts, this moves the products directly into stock and marks the receipt Done
+        
+        . If it’s a two-step receipt, validating the first step moves items into an Input area, after which Odoo will generate an internal transfer to move from Input to Stock.
+
+        Once validated, the linked Purchase Order will reflect the received quantity
+        
+        .
+
+    Delivery Orders (Outgoing Shipments): These are goods going out of your warehouse to customers (or to another owned location, in case of inter-warehouse transfer disguised as delivery). When you confirm a Sales Order, a delivery order is created in Inventory
+    
+    . Delivery orders can also be made independently via Inventory ‣ Operations ‣ Delivery Orders.
+
+    Processing a Delivery: Open the delivery (e.g. WH/OUT/xxxx). Source will be your warehouse (e.g. “WH/Stock”) and destination “Customers” (or a customer’s specific location). The products and quantities to deliver are listed. To fulfill:
+
+        Ensure the products are available (Odoo will show if the items are reserved or if you need to backorder). You might click Check Availability if Odoo hasn’t automatically reserved stock.
+
+        If lots or serial numbers apply, you must specify which serial/lot is being delivered (Odoo may pop up a wizard for this if needed).
+
+        Click Validate to ship the products. The stock moves from your warehouse to the customer (customer location) – meaning your on-hand stock reduces accordingly. The Sales Order will then show the delivered quantities.
+
+    If you are using multi-step deliveries (e.g. pick > ship), the sales order confirmation might create two linked transfers: a picking (from stock to a staging area) and a delivery (from staging to customer). You process the picking first (validate it to move goods to Output), then process the final delivery.
+
+    Internal Transfers: These operations move products within your organization, e.g. from one warehouse to another, or between locations in the same warehouse. Use Inventory ‣ Operations ‣ Transfers (or the Internal Transfers card) and create a new transfer:
+
+        Specify the Source Location and Destination Location for the move. For example, to transfer from Warehouse A to Warehouse B, source might be WH/A/Stock and destination WH/B/Stock (assuming multi-warehouse).
+
+        Add the product lines and quantities to move.
+
+        Validate the transfer to execute it. If it’s an inter-warehouse transfer and those warehouses belong to the same company, the move may be direct; if they are separate companies, a corresponding incoming shipment could be generated for the recipient side.
+
+    For multi-step internal movements (e.g. moving through transit locations or quality checks), Odoo can automate intermediate steps via routes. In a simple one-step internal transfer, validating it will deduct stock from the source and add to the destination immediately.
+
+    Backorders: If you cannot complete the full quantity of a transfer (receipt or delivery), Odoo will ask if you want to create a backorder. A backorder is a new transfer for the remaining quantity. For example, if a delivery was for 10 units but only 6 were in stock, you deliver the 6 and allow a backorder for 4, which can be processed when stock is available. Odoo handles this automatically on validation – you simply indicate what quantity you are actually validating, and it will create a backorder for the rest.
+
+    Cancelling or Adjusting Transfers: If a mistake is made on a transfer, Inventory managers can cancel (or return) them. Deliveries can be returned (using the Return button, which creates an incoming shipment back from customer to adjust stock). Receipts can likewise be returned to vendor. Internal transfers can be reversed similarly. Permissions may be needed to unlock/cancel done transfers.
+
+Reservation and Availability: By default, Odoo auto-reserves stock for delivery orders when the sales order is confirmed (if the stock is available). You can configure Reservation Methods – e.g. at confirmation, at scheduled time, or manual
+
+. The forecasted inventory report (see Reporting section) shows reserved quantities clearly. If stock isn’t available, a delivery will be in status Waiting/Backorder. You might then manufacture or purchase more stock or use a reordering rule to fulfill demand.
+
+Example – Process a Purchase Receipt and Delivery:
+
+    Receipt: A Purchase Order for 5 units of “ACME Chair” is confirmed. Go to Inventory and click the Receipts card (or Operations ‣ Receipts). You’ll see a new receipt (e.g. WH/IN/00010) waiting. Open it, verify it lists 5 Chairs to add into WH/Stock. Click Validate. Now stock for “ACME Chair” increases by 5. The PO is updated to show 5 received
+    
+    
+    .
+
+    Delivery: A Sales Order for 3 units of “ACME Chair” is confirmed. This generates a delivery (WH/OUT/00007). In Inventory, open Delivery Orders and find it. The transfer shows 3 Chairs from WH/Stock to Customer. Ensure 3 are reserved (if not, click Reserve). Then click Validate. The 3 units leave stock (on-hand reduces) and the SO is updated as delivered. If only 2 were available and you delivered 2, Odoo would keep a backorder for the remaining 1.
+
+Odoo’s inventory operations thus cover the full cycle: receiving from suppliers, internal movements, and shipping to customers, with the system maintaining consistency (each move deducts from one location and adds to another). Users should regularly check the Inventory dashboard for any pending receipts or deliveries to process, ensuring smooth supply chain flow.
+Inventory Adjustments and Valuation
+
+Inventory Adjustments: Over time, actual stock in a warehouse can diverge from the recorded quantities (due to damage, loss, counting errors, etc.)
+
+
+. Inventory adjustments (also called physical inventories or stock counts) allow you to correct the system to match reality. In Odoo, go to Inventory ‣ Operations ‣ Physical Inventory to see the Inventory Adjustments page
+
+. This page lists all products currently in stock (with their locations and quantities)
+
+. Key points about using it:
+
+    Only products with quantity > 0 are shown by default
+    
+    (you can view zero-quantity lines in the Stock report if needed
+    
+    ).
+
+    You can filter or search this list by location, product, etc., to focus on a subset for counting.
+
+To perform a count (adjustment):
+
+    Click New on the Inventory Adjustments page to add a line (if the product is not already listed, or to count an empty location)
+    
+    
+    .
+
+    Select the Product and (if using multi-locations) the Location you are counting. If the product uses lots/serial numbers, you can also choose the specific lot/serial if counting that
+    
+    
+    .
+
+    In the line, leave On Hand Quantity as is (that’s the current system quantity). Enter the Counted Quantity – the actual quantity you physically counted
+    
+    
+    .
+
+    Save or click out of the line. Odoo will calculate the Difference (Counted minus On Hand) and display it
+    
+    . A positive difference means you have more than recorded (Odoo will create stock), a negative means you have less (Odoo will remove stock). Differences show in green or red for surplus or deficit
+    
+    
+    .
+
+    At this point, the adjustment is recorded but not yet applied to stock
+    
+    
+    . You can review multiple lines (perform a full inventory count across many products) before applying changes.
+
+To apply the adjustments, you have two options:
+
+    Click Apply on each line (far right) individually, or
+
+    Select multiple lines using the checkboxes and click the Apply button at the top (which appears after selection)
+    
+    
+    .
+
+When you apply, Odoo will ask for an Inventory Adjustment Reference/Reason (default is today’s date) – you can leave it or note something (like “Annual Count 2025”)
+
+
+. Confirm, and Odoo will apply the changes:
+
+    The on-hand quantities of those products update to the counted numbers.
+
+    Odoo creates corresponding stock move records internally for traceability
+    
+    . Essentially, if items were “lost”, it records a move from the warehouse to the Inventory Adjustment virtual location (type Inventory Loss) to remove them
+    
+    . If items were “found”, it moves from Inventory Adjustment location into stock.
+
+After applying, the adjustment lines disappear from the open list (since now the system quantity equals counted). You can view historical adjustments in Reporting ‣ Moves History or by looking at the product’s stock moves.
+
+Regular inventory counts (cycle counts) can be done using this feature. It’s wise to schedule periodic counts for different product categories or locations (Odoo also has a Cycle Counts feature if activated to schedule counts for certain products periodically
+
+
+).
+
+Tip: The Inventory Adjustment interface can also be used to quickly set initial stock levels when implementing Odoo. For example, to initialize stock, you might enter products with Counted Quantity (while On Hand is zero) and apply – this will bring in the existing stock with appropriate valuation.
+
+Inventory Valuation: This refers to how the monetary value of your stock is tracked. Odoo supports Periodic (Manual) and Perpetual (Automatic) valuation
+
+
+:
+
+    Manual valuation (Periodic): This is the default. Inventory value is not automatically recorded in accounting for each move. Typically, at period end, accountants will manually create journal entries to adjust inventory accounts based on physical inventory valuation. In Odoo, all product categories default to Manual valuation with Standard Price costing (meaning the cost is fixed on the product and not updated by system)
+    
+    .
+
+    Automatic valuation (Perpetual): When enabled, any stock move that changes the on-hand quantity creates journal entries to the appropriate stock accounts, keeping your accounting and inventory in sync in real time
+    
+    . For example, receiving goods will debit Inventory and credit Incoming Stock/Payable, delivering goods will credit Inventory and debit COGS/Expense (assuming accounts are set). To use this, you must:
+
+        Install and configure the Accounting app. In Accounting settings, enable Automatic Inventory Valuation (sometimes called Inventory Accounting)
+        
+        .
+
+        Set each relevant Product Category’s Inventory Valuation to Automated and assign the proper stock input/output and valuation accounts (usually Odoo fills default accounts, but you may adjust)
+        
+        
+        .
+
+        Choose a Costing Method (Standard, FIFO, AVCO) on the category. FIFO or AVCO require automated valuation to function fully, as they will adjust costs upon each receipt.
+
+Once configured, Odoo will record inventory value moves. Example: If “ACME Chair” is in a category with automated FIFO, and you buy 5 chairs at $50 each:
+
+    On receipt, Odoo increases inventory value by $250 (debit Inventory $250, credit Receipt-in-Transit or Accounts Payable depending on configuration).
+
+    On delivery of those chairs to a customer, it will take them out of inventory at their cost ($50 each) – credit Inventory, debit Cost of Goods Sold $50 each.
+
+This ensures the Inventory Value on the balance sheet is always up-to-date reflecting current stock on hand
+
+
+.
+
+If using Standard Price method (even with automated), you must update product costs manually when they change (or via standard cost adjustment entries).
+
+Inventory Valuation Reports: Odoo provides a Stock Valuation report (under Reporting or via Accounting) that shows the total value of inventory. You can see the value per product and how it’s split by location if needed. There’s also a valuation by lot/serial if enabled
+
+
+. Additionally, the Stock Report accessible in Inventory shows unit cost and total value per product
+
+
+.
+
+Note: Switching from manual to automatic valuation mid-way is possible but needs care to avoid double-counting value
+
+. Odoo’s guidance is to make stock zero, switch the setting, then re-input stock to let the system generate proper entries
+
+.
+
+In summary, inventory adjustments ensure your quantities are accurate (preventing stockouts or errors), and valuation settings ensure your inventory’s financial value is properly tracked. Business users should coordinate with accounting before enabling automated valuation, and always perform adjustments with dual control (physical count by warehouse staff, validation by inventory manager) to maintain accuracy. With Odoo’s double-entry moves and automated valuation, every adjustment or operation will maintain the integrity between the stock levels and accounting records
+
+
+.
+Reordering Rules and Procurement
+
+Maintaining adequate stock levels is crucial. Odoo offers Reordering Rules to automate procurement of products when stock is low. Reordering rules are essentially minimum stock (restock) rules that trigger purchase or production of products to prevent stockouts
+
+
+. They work in conjunction with the scheduler (which runs daily by default to check for needs).
+
+Setting up a Reordering Rule: You can create rules in two ways:
+
+    Go to Inventory ‣ Operations ‣ Replenishment (this view shows all products and their reordering rules, and allows manual planning of orders).
+
+    Or from a specific product form, click on Reordering Rules smart button (visible after enabling procurement and inventory tracking on the product)
+    
+    
+    .
+
+Before adding a rule, ensure the product is set up correctly for automated procurement:
+
+    It should be Storable and Track Inventory (which it will be if storable).
+
+    “Can be Purchased” or “Can be Manufactured” should be true, depending on how you replenish it
+    
+    . If it’s bought, set up a vendor under the Purchase tab. If manufactured, ensure a Bill of Materials exists and the Manufacture route is enabled for the product (which typically is automatic if using MRP).
+
+    Essentially, Odoo needs to know how to fulfill the need – via buying or making.
+
+On the reordering rule form, you will define:
+
+    Minimum Quantity: The stock level at which procurement is triggered (when stock forecast drops below this, Odoo will generate a procurement)
+    
+    .
+
+    Maximum Quantity: The target stock level to replenish up to
+    
+    . The system will procure enough to raise stock to this level.
+
+    Multiple Quantity: (Optional) increments in which to purchase/produce. For example, if your vendor sells only in packs of 10, you could set Multiple = 10. Then even if you need 7 to reach max, Odoo would order 10
+    
+    
+    .
+
+    Location: If you have multiple stocking locations, you can tie the rule to a specific location or warehouse (by default, it’s the product’s main warehouse stock).
+
+    Procurement Method/Route: In older versions this was explicit (like MTO vs stock), but in Odoo 18 the system primarily uses the rule to trigger an RFQ or MO. Ensure the product has a Buy route (supplier) or Manufacture route so the rule knows what to do. If both are available, you can specify the preferred route on the rule (in some Odoo versions).
+
+Once saved, the scheduler will nightly check the product’s forecasted quantity (on-hand minus outgoing plus incoming). If the forecasted quantity is below Min, it will create a draft RFQ (Request for Quotation) to your vendor or a draft Manufacturing Order, as appropriate
+
+
+. The draft will be for the quantity needed to reach the Max. For example, if Min = 5, Max = 25 and stock will drop to 4, Odoo generates a procurement for 21 units
+
+
+(to bring from 4 up to 25).
+
+Automated vs Manual Replenishment: There are two approaches:
+
+    Automatic (by scheduler): As above, Odoo’s scheduler automatically triggers the RFQ/MO. This requires the rule’s Trigger to be set to Auto. By default reordering rules are auto.
+
+    Manual replenishment: If you prefer to review and manually launch orders, you can go to Inventory ‣ Operations ‣ Replenishment at any time. This view shows products with their Min, Max, current stock and proposed replenishment. You can click Order Once or create an RFQ from there manually (Odoo 18’s interface allows one-click ordering from the replenishment screen). This is useful if you want control over when orders are actually created instead of automatic daily.
+
+You can also manually run the scheduler at any time (in debug mode via Inventory ‣ Operations ‣ Procurement: Run Scheduler) which will immediately evaluate all rules
+
+
+.
+
+Make To Order (MTO): Another procurement method (no stock kept) is MTO, where a procurement is triggered for each sales order line instead of using stock. In Odoo 18, MTO is typically implemented by setting the product route Replenish on Order (MTO)
+
+. If a product is MTO, when a Sales Order is confirmed, the system will generate either a Purchase RFQ or Manufacturing Order directly linked to that sale (bypassing reordering rules). MTO ensures you only buy/produce exactly what is ordered, no more. You might choose MTO for custom or expensive items, and Min/Max rules for regularly stocked items
+
+(see Odoo’s “Choose Between Reordering Rules and Make to Order” guide).
+
+Vendor and Lead Times: When using reordering rules to purchase, be sure to set vendor lead times if applicable (on the vendor info for the product) and a Security Lead Time on the product or overall, if you want the scheduler to order earlier to meet demand. Odoo will consider expected incoming shipments in the forecast. Reordering rules work on forecasted stock which accounts for outgoing (sales) and incoming (open PO) in the pipeline.
+
+Example: You sell a product “Bolt” constantly. You set Min = 50, Max = 200 on its reordering rule, and choose your supplier. Currently you have 60, so no order. Over a week, sales orders reserve stock and forecast drops to 45. Overnight, the scheduler sees forecast 45 < Min 50, so it creates a Purchase RFQ for 155 units (to reach 200). The purchase department can confirm and send that RFQ to order the bolts
+
+
+. When those arrive and you receive them, stock will be ~200 again.
+
+Reordering rules drastically reduce manual monitoring – the system ensures high-demand products are kept in stock at all times by triggering RFQs as soon as stock falls below threshold
+
+
+. You just need to review the draft orders. It’s a good practice to periodically review Min/Max values to adjust to actual demand.
+Barcode and Lot/Serial Number Tracking
+
+Odoo’s Inventory module supports barcode scanning and lot/serial number tracking to improve accuracy and traceability.
+Barcode Scanning in Inventory
+
+Using the Barcode app (which is integrated with Inventory) allows users to process operations by scanning rather than manual data entry. This speeds up receiving, picking, and inventory adjustments by turning barcodes into commands.
+
+Setup for Barcode Scanning:
+
+    Install the Barcode module if not already (in Apps, usually installed by default with Inventory in Odoo 18).
+
+    In Inventory ‣ Configuration ‣ Settings, scroll to the Barcode section. Enable Barcode Scanner features as needed. For example, you can select a Barcode Nomenclature (set of rules for interpreting barcodes). By default, Odoo supports EAN-13 and lots of internal codes
+    
+    
+    . You can also enable the Stock Barcode Database option to auto-fetch product info for common barcodes (requires internet and maybe API key)
+    
+    .
+
+    Ensure products have barcodes assigned. Each product form has a Barcode field (under General Information). You can manually input a barcode number there or scan into it
+    
+    
+    . You can also configure packaging barcodes or location barcodes similarly.
+
+Once configured, you can use the Barcode interface (accessible via the Barcode app or from Inventory dashboard) for operations:
+
+    When you open the Barcode app, you get a scanning interface. You can pick an operation type (Receipts, Delivery, Inventory, etc.) or scan a command barcode to start one. Odoo provides printable operation barcodes (e.g. a barcode that tells the system “start a new receipt” or “validate current transfer”) which you can use as shortcuts
+    
+    . These can be printed from Inventory ‣ Configuration ‣ Settings (there’s a Print Barcode Commands option to get a sheet of command barcodes)
+    
+    .
+
+    In a typical use, a warehouse worker would click “Receipts” in the barcode app, then scan the purchase order number or the products as they come in. Scanning a product’s barcode adds it to the receipt picking list (or increments quantity). Scanning a location barcode can record moving to a specific location. Finally, scanning a validate barcode will validate the transfer.
+
+Odoo’s barcode system supports mode switching by scanner: for example, scan a source location, then product, then destination, etc. It’s highly useful in large warehouses with many SKUs.
+
+Tip: You can print barcodes for locations from Inventory ‣ Configuration ‣ Locations (each location form often has a barcode field, auto-generated code you can print on a label). Same for products – Odoo can generate barcode labels for products if they don’t have one (using the product ID or custom EAN13 if you assign).
+Lot and Serial Number Tracking
+
+For industries that require traceability (pharmaceutical, food, electronics, etc.), Odoo allows tracking stock by lot numbers or serial numbers. You must first enable this in Inventory ‣ Configuration ‣ Settings: under Traceability, activate Lots & Serial Numbers
+
+. This will add lot/serial tracking capabilities to products and operations.
+
+Lots vs Serials:
+
+    A Lot is an identifier for a batch of units (e.g. batch #ABCD of 100 units of Product X). All units in that lot share the same identifier and are managed together
+    
+    
+    . Lots are useful when products are produced/received in batches and traced together (e.g. for recalls or expiration management).
+
+    A Serial Number is a unique identifier for a single unit (each unit gets a distinct number)
+    
+    
+    . Serial numbers are used when each item needs individual tracking (e.g. electronics with unique S/N, or high-value items).
+
+After enabling the feature, configure each product’s tracking method:
+
+    Open the product form, ensure Track Inventory is checked, and set the Tracking field to By Lot or By Unique Serial Number, then save
+    
+    
+    .
+
+    Now Odoo will require you to provide lot/serial info whenever this product is moved in or out.
+
+Using Lots/Serials in Operations:
+
+    Receiving products with lots/serials: When processing a Receipt or an incoming Manufacturing Order for a tracked product, you must assign lot/serial numbers. On the receipt, Odoo may show a Lot/Serial Number column. You can directly input new lot names or scan them. If multiple items, you can click the little list icon on the move line to open the detailed operations pop-up, where you can add multiple serials or split into multiple lots. Odoo even has a Generate Serials function where you can auto-generate a sequence of serial numbers if needed
+    
+    
+    .
+
+    Delivering products with lots/serials: When delivering, you’ll pick which lot or serial each unit comes from (since the stock might have multiple lots). Odoo will force you to specify exactly which ones. For serial-numbered products, each quantity = 1 line that you assign a serial to.
+
+    Internal transfers: Similarly, if moving tracked products internally, you maintain the identity by lot/serial so Odoo knows what’s where.
+
+    Inventory Adjustments: The Physical Inventory page will list separate lines per lot/serial if a product has many in stock
+    
+    . You adjust each separately if needed. You can even create a new lot or serial on the fly in an adjustment line if you “found” items with a new number
+    
+    (Odoo lets you create new lot records there).
+
+You can record lots/serials in advance: via Inventory ‣ Products ‣ Lots/Serial Numbers, you can create a new lot/serial record and even pre-assign quantities or link to a product
+
+
+. Typically, though, they get created during receipts or production.
+
+Traceability: Odoo provides reports to trace products:
+
+    The Lots/Serial Numbers menu (Inventory ‣ Products ‣ Lots/Serial Numbers) shows a list of all lot and serial numbers, which you can filter by product. Selecting one shows its details: current location, quantity, and a Traceability button
+    
+    
+    .
+
+    The Traceability report for a lot/serial shows the entire history: which incoming shipment it came on, any internal moves, and to which customer or production it went
+    
+    
+    . This is extremely useful for quality control and recalls. For example, if a batch is defective, you can find which customers received items from that lot.
+
+Additionally, you can configure if lot/serial should be displayed on delivery slips (there’s a setting Display Lots & Serial Numbers on Delivery Slips in settings if needed for customer-facing docs)
+
+.
+
+Expiration Dates: If relevant (e.g. perishable goods), Odoo can handle expiration dates on lots. You’d activate Expiration Dates and set expiration times on the product or lot. The system can warn or block usage of expired lots. (This is a bit beyond basic scope but worth noting that it exists under Product Tracking settings).
+
+Barcode & Serial Combined: You can also use barcode scanning to input lot/serial numbers – e.g. scanning a barcode that represents a serial number in the receipt will select that serial for the product (if the nomenclature is configured). Odoo 18 even allows enforcing scanning for every serial (there’s a setting in Operation Types to require scanning of serials to reduce errors)
+
+.
+
+Example: You receive 10 units of Vaccine with lot “VX001” and expiration 12/2025. In the receipt, you enter lot “VX001” and quantity 10 on that line (or use the detailed operations to allocate all 10 to lot VX001). Odoo creates one lot record for VX001. Later, a customer order for 3 units will prompt you to choose a lot – you pick VX001 and 3 units (now 7 remain of that lot). If there’s a recall for lot VX001, you can check traceability to see that those 3 went to Customer A, and 7 are still in stock – then take appropriate action.
+
+In summary, Barcode scanning streamlines warehouse operations by minimizing manual entry and errors
+
+
+. Lot and serial tracking provide end-to-end traceability of products, often a compliance requirement. Business users should set up barcodes and traceability early if they plan to use them, as it impacts how they perform daily tasks (you don’t want to realize mid-process that you should have scanned a serial). With the combination of these tools, Odoo inventory management becomes both faster and more accurate.
+Reporting and Inventory Analysis Tools
+
+Odoo 18 offers a variety of reports and dashboards to analyze inventory status, movements, and values. These tools help in making informed decisions and maintaining transparency. Key reporting features include:
+
+    Stock Report (On Hand Inventory): Accessible via Inventory ‣ Reporting ‣ Stock, this report provides a real-time snapshot of all products in stock and their quantities and values
+    
+    . It lists each product with columns for On Hand quantity, Reserved, Incoming, Outgoing, Unit Cost, and Total Value
+    
+    
+    . You can group this report by warehouse or category, etc., using the sidebar filters
+    
+    
+    . The Stock report is a quick way to see what you have and where:
+
+        On Hand is the physical quantity available.
+
+        Free to Use (if shown) is what’s available minus reserved for other orders
+        
+        
+        .
+
+        Incoming and Outgoing show quantities due in from suppliers or due out to customers
+        
+        
+        .
+
+        It also shows the inventory valuation per product (unit cost and total value)
+        
+        .
+
+        There are action buttons like History (to view detailed moves for that product), Replenishment (shortcut to reordering rules for it)
+        
+        , Locations (to see stock per location), and Forecast (to jump to the forecasted report)
+        
+        .
+
+    Note: The Stock report is limited to users with appropriate rights (typically Inventory Manager)
+    
+    .
+
+    Forecasted Inventory Report: This is a powerful tool for projecting future stock levels. It can be accessed from multiple places: the Forecasted smart button on a product form, or from a Sales/Purchase order line (graph icon), or via Inventory ‣ Reporting ‣ Forecasted
+    
+    . The forecast report combines current on hand, incoming, outgoing, and even anticipated (reordering, manufacturing) in a timeline:
+
+        It displays a graph of stock over time and a table of scheduled operations
+        
+        
+        .
+
+        The table shows for each future event: what is reserved (replenishment), receipts due, outgoing deliveries, and calculates the Forecasted quantity after each event
+        
+        
+        .
+
+        It also distinguishes Forecasted with Pending (including even unconfirmed/planned moves) vs Forecasted Inventory (confirmed operations)
+        
+        .
+
+    From the forecast screen, you can perform actions:
+
+        Reserve/Unreserve products for a sale or manufacturing directly
+        
+        .
+
+        Replenish – a button to manually trigger a replenishment (creates a draft PO or MO on the fly)
+        
+        
+        .
+
+        Manufacturing Forecast – if the product is produced, you can click Manufacturing Forecast to see if there are enough components for upcoming MO’s (it shows which raw materials might be short)
+        
+        
+        .
+
+        Update Quantity – a shortcut to do an inventory adjustment for this product if needed (change quantity on hand)
+        
+        .
+
+    The Forecast report is especially useful to anticipate shortages before they happen and ensure procurement is timed correctly. For instance, a sales order in the future will show reducing the forecast, giving you a chance to replenish ahead of time.
+
+    Inventory Valuation Dashboard: If automated valuation is on, Inventory ‣ Reporting ‣ Stock Valuation (or via Accounting) shows the total value of inventory and allows filtering by product category or location. It might list all SVL (Stock Valuation Layers) or current value by product. For each product, it can show quantity and total value.
+
+    Moves History: Under Inventory ‣ Reporting ‣ Moves History, you get a dashboard of all stock moves over time. You can filter by date, product, source/destination, etc. It helps to analyze where products are moving (for example, how many of product X were shipped in last month, or received from vendor Y).
+
+    Locations & Moves Dashboards: Odoo also has specific reports like Locations dashboard and Moves history dashboard
+    
+    
+    which present graphical summaries. The Locations dashboard can highlight which locations are full or empty, etc., and the Moves history can show trend graphs of incoming/outgoing over time.
+
+    Inventory Adjustments Analysis: After doing inventory counts, you might want to analyze adjustments. The Moves History will show all adjustments (they appear as stock moves from Inventory Adjustment virtual location). You could filter by that to see all shrinkage or overages recorded in a period.
+
+    Custom Reports & Pivot Tables: Like all Odoo apps, the inventory data can be viewed in list, pivot, or graph mode. For example, in Inventory ‣ Reporting ‣ Stock, you can switch to Pivot view to aggregate quantities by category or warehouse, etc. You can also save custom filters, like a filter for all products below minimum stock, etc.
+
+    Traceability Reports: As mentioned, for lot/serial tracked items, there are specific traceability reports accessible from the lot/serial itself or via the product moves.
+
+    Ageing or Slow-moving Stock: While not a built-in named report in Inventory, you can often get insights by filtering the moves or using pivot tables (e.g. see last movement date per product to find obsolete stock). Odoo 18 might have added a report for Forecasted vs Actual or Stock Aging under Inventory or discuss doing it in Studio.
+
+Example Uses:
+
+    Stock on Hand by Warehouse: Use the Stock report, group by Warehouse – this will list each warehouse and the quantity/value of products in each
+    
+    
+    .
+
+    Valuation Summary: Use Stock Valuation report to see total inventory value. Or go to Accounting’s trial balance to see inventory accounts (if automated).
+
+    Sales Backorder Analysis: Go to Inventory ‣ Reporting ‣ Forecasted, filter for negative forecast (if any product’s forecast goes negative, meaning more outgoing than stock/incoming – indicates backorders).
+
+    Dead Stock: In Inventory ‣ Products, you could add a filter “On Hand > 0” and “Sales in last 6 months = 0” (if sales info accessible via pivot) to find products that have stock but haven’t sold (requires cross-app data though, maybe better done via inventory moves vs time).
+
+Remember that all these reports update in real time as transactions are processed. For a business user, the Inventory dashboard + Stock report are usually most helpful day-to-day (to know what’s available and what needs action), while the Forecast report and replenishment report help in planning and procurement. Managers will use the valuation and moves reports for audits and accounting reconciliation.
+Integration with Other Odoo Modules
+
+One of Odoo’s strengths is the tight integration between applications. The Inventory module is central to supply chain operations and links seamlessly with Purchasing, Sales, and Manufacturing (and even Accounting). Here’s how:
+
+    Sales ↔ Inventory: When a Sales Order (in the Sales app) is confirmed, Odoo automatically creates a Delivery Order in Inventory for the products to be delivered to the customer
+    
+    
+    . The inventory reservation system allocates stock to that delivery. Inventory users then process the delivery (picking, packing, shipping) and validate it, which updates the Sales Order as delivered. If the Sales Order is cancelled, the linked delivery is cancelled too. Additionally, any Sale Order Line can trigger specific routes: for example, a sale order line marked with the Dropship route will create a dropship transfer (one that ships directly from vendor to customer without entering your stock)
+    
+    
+    . In such cases, Inventory will still record a virtual move (from a vendor location to customer) for traceability. Integration points:
+
+        Quotations/SO Availability: Salespeople can see availability of products on the sales order (it shows if the product is on hand or not). This is fed by inventory levels.
+
+        Sales Forecast and Reservation: The forecasted inventory report can be accessed from a sales order to check if future deliveries can be met
+        
+        
+        .
+
+        Delivery Lead Times: You can set customer lead times on products; the Sales app will account for them (which come from Inventory configuration of lead times).
+
+        Shipping Integration: If using delivery carrier integration (FedEx, UPS, etc.), those features live partly in Inventory (for label generation) but are triggered from Sales Delivery. Inventory module handles the weight calculation, label printing, etc., when integrated with Sales (and eCommerce) for fulfillment.
+
+    Purchase ↔ Inventory: When a Purchase Order (in the Purchase app) is confirmed, Odoo creates an incoming shipment (Receipt) in Inventory
+    
+    
+    . Warehouse users receive the products through that receipt. Once validated, the Purchase Order is updated with the received quantities. If a PO is cancelled, any draft receipt is cancelled. Other integrations:
+
+        Reordering Rules: As described, the Inventory scheduler can create draft POs (RFQs) automatically, which appear in the Purchase app for procurement officers to confirm
+        
+        
+        . This is inventory triggering purchase.
+
+        Dropship: If a product is set to dropship (route), confirming a Sales Order generates a Purchase Order to the vendor with the customer’s address. The Inventory module in that case will not route goods through warehouse stock (the receipt is linked directly to a delivery). But Inventory still keeps track with a virtual location.
+
+        Vendor Bills: When goods are received in Inventory, you can create the vendor bill in Purchase for the delivered quantities. The quantity received info flows to the bill creation (especially if using 3-way matching, Inventory’s receipt is the base for vendor bill validation).
+
+    Manufacturing (MRP) ↔ Inventory: The Manufacturing app relies on Inventory for consuming raw materials and producing finished goods. When a Manufacturing Order (MO) is created for a product:
+
+        On MO confirmation, Odoo reserves the required components from Inventory (if available). It creates internal stock moves: from the component’s storage location to a Production location (which is a virtual location representing WIP)
+        
+        . When you mark components as consumed (or when you mark production as done), those moves are completed, deducting the components from stock.
+
+        Simultaneously, a stock move is created for the finished product from Production location to the destination (usually your Stock). When you finish the MO, that move adds the finished quantity to inventory.
+
+        Thus, Inventory records every material issue and receipt related to manufacturing. This means your Inventory on hand always reflects the latest production status. If a MO is cancelled, reserved components are returned to stock (cancelling their reservation).
+
+        If you have multi-step manufacturing (like 3-step with separate pick and produce steps), Inventory will have multiple transfers (one to staging, one to production, one to stock) tied to the MO.
+
+        Work Orders and Operations: In more advanced cases, each work order can consume materials at different operation steps – Odoo will handle partial consumption moves as per the routing setup, all within Inventory’s movement records.
+
+        Subcontracting: If using subcontractors (outsourced manufacturing), Inventory manages sending components out (deliver to subcontractor location) and receiving finished goods in. These are special routes but still implemented as inventory moves between your locations and a subcontractor location.
+
+    Accounting ↔ Inventory: If automated valuation is on, Inventory moves generate accounting entries. The Inventory module provides the values (e.g. product cost) and accounts (configured on product categories) to the Accounting app. Additionally, when inventory is adjusted (Inventory Loss), it posts to an expense/shrinkage account. On the flip side, if using Anglo-Saxon (real-time COGS), delivering goods triggers the COGS entry. So inventory integration with Accounting ensures the cost of goods sold and inventory value are accurate in financial statements
+    
+    
+    . Even without automated valuation, inventory gives the numbers that accountants use to post manual entries.
+
+    Maintenance: If using maintenance app, spare parts used in a maintenance request can be linked to inventory to deduct them (though out-of-box Odoo uses a simplistic approach; one could integrate a maintenance operation to an inventory move for parts).
+
+    Quality: With quality app, you can have quality checks during receipts or manufacturing. Those checks can block a transfer in Inventory until passed. E.g., an incoming receipt might generate a quality alert that must be completed (Quality and Inventory coordinate to not finalize the receipt until quality check done). If products fail quality and are scrapped, that triggers an inventory scrap move.
+
+    Point of Sale (POS): If you have retail POS, every sale in POS deducts from Inventory in real time. POS is basically a frontend, but it creates delivery orders under the hood (or direct stock adjustments) to keep inventory correct. The Inventory app holds the stock, and POS will indicate if something is out of stock (depending on configuration).
+
+    E-commerce: Similar to Sales integration, online orders confirmed create delivery orders in Inventory.
+
+Practical Flow Example (End-to-End):
+
+    Purchase: You create a Purchase Order for raw materials (e.g. 100 units of Steel). Confirming PO creates a Receipt. Inventory team receives and validates it, 100 Steel now in stock. PO marked received.
+
+    Manufacturing: You have a Manufacturing Order to produce Finished Goods that require Steel. When you plan the MO, Odoo reserves Steel from stock (inventory shows 100 reserved if you check). Production is done, MO consumes 80 Steel (inventory moves 80 out) and produces 50 Finished Goods (inventory moves 50 in). Inventory now shows 20 Steel remaining, 50 FG in stock. Accounting (if automated) got entries for Steel consumption and FG capitalized.
+
+    Sales: A Sales Order for 50 Finished Goods is confirmed. Delivery order is created and reserved (50 FG reserved from stock). Inventory shows FG available 0 now (50 on hand, 50 reserved). Warehouse ships the order (delivery validated) – FG stock goes to 0 on hand as 50 delivered. Sales Order is done, and accounting might record COGS for those 50.
+
+    Reordering: The Steel now at 20 which is below its Min (say min 50, max 100). That night, Odoo’s scheduler triggers a RFQ to buy more Steel. The cycle continues...
+
+Throughout the process, each module updated the others automatically: purchase receipts updated inventory, manufacturing orders pulled from inventory, sales orders triggered delivery from inventory, and inventory in turn (via reordering rule) triggered purchase. This integration eliminates redundant data entry and ensures all departments are on the same page – sales can’t sell something that purchasing hasn’t bought or that manufacturing hasn’t made, because inventory visibility is in real-time.
+
+Conclusion: As a business user, you mainly operate within each app (Sales, Purchase, Inventory, etc.), but it’s important to understand these linkages. For example, if a sales order is not deliverable because inventory is not available, you know to either procure or produce more – possibly by looking at the Replenishment report or triggering a rule. Likewise, if purchasing buys something, it won’t appear in stock until the warehouse receives it in Inventory. Each module has its own documents, but the Inventory module acts as the central hub for the physical goods moving through your system, bridging the upstream (supply/purchase) and downstream (sales/distribution) operations. With Odoo 18, these integrations are mostly automatic, but configuration (like setting correct routes, reordering rules, and stock accounts) ensures the automation works correctly for your business processes.
