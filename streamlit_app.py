@@ -2,8 +2,12 @@ import streamlit as st
 import asyncio
 import json
 import time
+from datetime import datetime
 from typing import Dict, Any, Optional
 from analyst_agent import OdooGAPAnalyst
+from login import render_login_ui
+from token_counter import TokenCounter
+from analysis_history import AnalysisHistory
 
 
 class StreamlitOdooGAPApp:
@@ -19,6 +23,8 @@ class StreamlitOdooGAPApp:
         self.setup_page_config()
         self.initialize_session_state()
         self.analyst = self._get_analyst_instance()
+        self.token_counter = TokenCounter()
+        self.analysis_history = AnalysisHistory()
 
     def setup_page_config(self):
         """Configure Streamlit page settings."""
@@ -32,9 +38,6 @@ class StreamlitOdooGAPApp:
     def initialize_session_state(self):
         """Initialize session state variables."""
         # Initialize session state variables if they don't exist
-        if 'analysis_history' not in st.session_state:
-            st.session_state.analysis_history = []
-
         if 'current_analysis' not in st.session_state:
             st.session_state.current_analysis = None
 
@@ -44,11 +47,35 @@ class StreamlitOdooGAPApp:
         if 'data_loaded' not in st.session_state:
             st.session_state.data_loaded = False
 
+        # Initialize model selection state
+        if 'selected_model' not in st.session_state:
+            st.session_state.selected_model = 'gpt-4o-mini'
+
+        if 'model_changed' not in st.session_state:
+            st.session_state.model_changed = False
+
     @staticmethod
     @st.cache_resource
     def _get_analyst_instance():
         """Get or create the OdooGAPAnalyst instance with caching."""
         return OdooGAPAnalyst()
+
+    def _update_analyst_model(self, model_name: str):
+        """Update the analyst model and handle state changes."""
+        if self.analyst.get_current_model() != model_name:
+            self.analyst.set_model(model_name)
+            st.session_state.model_changed = True
+            # Reset data loading state when model changes
+            st.session_state.data_loaded = False
+            st.session_state.analyst_initialized = False
+
+    def get_current_user_email(self) -> Optional[str]:
+        """Get the current user's email."""
+        if hasattr(self, 'login_manager') and self.login_manager:
+            current_user = self.login_manager.get_current_user()
+            if current_user:
+                return current_user.get('email')
+        return None
 
     def render_header(self):
         """Render the application header."""
@@ -56,17 +83,106 @@ class StreamlitOdooGAPApp:
         st.markdown("""
         This tool helps analyze business requirements and determine whether they require 
         standard Odoo configuration or custom development.
-        
+
         If you provide an example, estimation will be more accurate.
         Also feel free to provide examples of your own estimation, for i.e.: 
         Examples for estimation: To add one simple field to a form, takes 10 minutes.
         """)
         st.divider()
 
+    def render_model_selector(self):
+        """Render the model selection interface."""
+        st.subheader("🤖 AI Model Selection")
+
+        # Get available models
+        available_models = OdooGAPAnalyst.list_available_models()
+
+        # Create model options with descriptions
+        model_options = []
+        model_labels = []
+
+        for model_key, description in available_models.items():
+            model_options.append(model_key)
+            model_labels.append(f"{model_key} - {description}")
+
+        # Current model info
+        current_model = self.analyst.get_current_model()
+        current_index = model_options.index(
+            current_model) if current_model in model_options else 0
+
+        # Model selector
+        selected_model = st.selectbox(
+            "Choose OpenAI Model:",
+            options=model_options,
+            index=current_index,
+            format_func=lambda x: available_models.get(x, x),
+            help="Select the OpenAI model to use for analysis. Different models have different capabilities and costs.",
+            key="model_selector"
+        )
+
+        # Update model if changed
+        if selected_model != st.session_state.selected_model:
+            st.session_state.selected_model = selected_model
+            self._update_analyst_model(selected_model)
+            st.success(f"✅ Model changed to: {selected_model}")
+            st.rerun()
+
+        # Current model display
+        col1, col2 = st.columns(2)
+
+        with col1:
+            st.info(f"**Current Model:** {current_model}")
+
+        with col2:
+            # Show model change notification
+            if st.session_state.model_changed:
+                st.warning("⚠️ Model changed - please reload knowledge base")
+                st.session_state.model_changed = False
+
+        # Model comparison info
+        with st.expander("📊 Model Comparison Guide", expanded=False):
+            st.markdown("""
+            **Model Recommendations:**
+
+            🚀 **GPT-4 Turbo** (Use Only for very complex requirements)
+            - Best overall performance
+            - Most accurate analysis
+            - Latest training data
+            - Balanced cost/performance
+
+            🎯 **GPT-4o** (Latest)
+            - Newest model with multimodal capabilities
+            - Excellent for complex analysis
+            - Higher cost but best quality
+
+            💰 **GPT-3.5 Turbo** (Budget-friendly)
+            - Faster responses
+            - Lower cost
+            - Good for simple requirements
+            - May be less accurate for complex analysis
+
+            ⚡ **GPT-4o Mini** (Fast & Cheap)
+            - Faster responses
+            - Low cost
+            - Good for quick analysis
+            - May lack depth for complex requirements
+
+            🔥 **GPT-4o Nano** (Most Cost-effective)
+            - Fastest responses
+            - Lowest cost
+            - Good for basic analysis
+            - Best value for routine tasks
+            """)
+
     def render_sidebar(self):
         """Render the sidebar with configuration options."""
         with st.sidebar:
             st.header("📋 Configuration")
+
+            # Model selection
+            self.render_model_selector()
+
+            st.divider()
 
             # Data loading status
             st.subheader("📚 Knowledge Base Status")
@@ -79,29 +195,96 @@ class StreamlitOdooGAPApp:
 
             st.divider()
 
-            # Analysis history
-            st.subheader("📈 Recent Analyses")
-            if st.session_state.analysis_history:
-                for i, analysis in enumerate(
-                        reversed(st.session_state.analysis_history[-5:])):
-                    if st.button(
-                            f"📝 {analysis['requirement'][:30]}...",
-                            key=f"history_{i}",
-                            help=analysis['requirement']
-                    ):
-                        st.session_state.current_analysis = analysis
-                        st.rerun()
-            else:
-                st.info("No previous analyses")
+            # User-specific analysis history
+            self.render_user_history_sidebar()
 
             st.divider()
 
-            # Clear history button
-            if st.button("🗑️ Clear History", key="clear_history"):
-                st.session_state.analysis_history = []
-                st.session_state.current_analysis = None
-                st.success("History cleared!")
+            # User statistics
+            self.render_user_stats_sidebar()
+
+    def render_user_history_sidebar(self):
+        """Render user-specific analysis history in sidebar."""
+        st.subheader("📈 Your Recent Analyses")
+
+        current_user_email = self.get_current_user_email()
+        if not current_user_email:
+            st.info("Please log in to see your analysis history")
+            return
+
+        # Get user's analysis history
+        user_history = self.analysis_history.get_user_history(current_user_email,
+                                                              limit=5)
+
+        if user_history:
+            for i, analysis in enumerate(user_history):
+                # Format the button text
+                requirement_text = analysis['requirement'][:25] + "..." if len(
+                    analysis['requirement']) > 25 else analysis['requirement']
+                timestamp = datetime.fromisoformat(analysis['timestamp']).strftime(
+                    "%m/%d %H:%M")
+                model_used = analysis.get('model_used', 'Unknown')
+                impl_type = analysis.get('summary', {}).get('implementation_type',
+                                                            'unknown')
+
+                # Color code by implementation type
+                if 'development' in impl_type.lower():
+                    icon = "🔧"
+                elif 'configuration' in impl_type.lower():
+                    icon = "⚙️"
+                else:
+                    icon = "❓"
+
+                button_text = f"{icon} {requirement_text}"
+                help_text = f"Date: {timestamp}\nModel: {model_used}\nType: {impl_type}\nRequirement: {analysis['requirement']}"
+
+                if st.button(
+                        button_text,
+                        key=f"history_{analysis['id']}",
+                        help=help_text
+                ):
+                    # Load this analysis
+                    st.session_state.current_analysis = {
+                        'requirement': analysis['requirement'],
+                        'result': analysis['result'],
+                        'timestamp': analysis['timestamp'],
+                        'model_used': analysis['model_used']
+                    }
+                    st.rerun()
+        else:
+            st.info("No previous analyses")
+
+        # Clear history button
+        if user_history and st.button("🗑️ Clear My History", key="clear_user_history"):
+            if self.analysis_history.clear_user_history(current_user_email):
+                st.success("Your history has been cleared!")
                 st.rerun()
+
+    def render_user_stats_sidebar(self):
+        """Render user statistics in sidebar."""
+        current_user_email = self.get_current_user_email()
+        if not current_user_email:
+            return
+
+        stats = self.analysis_history.get_user_stats(current_user_email)
+
+        if stats['total_analyses'] > 0:
+            st.subheader("📊 Your Statistics")
+
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric("Total Analyses", stats['total_analyses'])
+                st.metric("Configurations", stats['configuration_analyses'])
+
+            with col2:
+                st.metric("Developments", stats['development_analyses'])
+                st.metric("Avg Confidence", f"{stats['avg_confidence_score']:.2f}")
+
+            # Show most used model
+            if stats['models_used']:
+                most_used_model = max(stats['models_used'].items(), key=lambda x: x[1])
+                st.info(
+                    f"**Most Used Model:** {most_used_model[0]} ({most_used_model[1]} times)")
 
     def load_knowledge_base(self):
         """Load the knowledge base with progress indication."""
@@ -123,6 +306,13 @@ class StreamlitOdooGAPApp:
     def render_input_section(self):
         """Render the requirement input section."""
         st.header("📝 Business Requirement Input")
+
+        # Show current model being used
+        current_model = self.analyst.get_current_model()
+        model_description = OdooGAPAnalyst.list_available_models().get(current_model,
+                                                                       "Unknown")
+
+        st.info(f"🤖 **Using Model:** {current_model} - {model_description}")
 
         # Input methods
         input_method = st.radio(
@@ -176,9 +366,34 @@ class StreamlitOdooGAPApp:
             )
 
     async def perform_analysis(self, requirement_text: str) -> Optional[Dict[str, Any]]:
-        """Perform the GAP analysis asynchronously."""
+        """Perform the GAP analysis asynchronously and track token usage."""
         try:
+            # Get current user email
+            current_user = None
+            if hasattr(self, 'login_manager') and self.login_manager:
+                current_user = self.login_manager.get_current_user()
+
+            # Perform analysis
             result = await self.analyst.analyze_requirement(requirement_text)
+
+            # Track token usage if we have a result with token usage data
+            if result and 'token_usage' in result and current_user:
+                user_email = current_user.get('email')
+                model_name = self.analyst.get_current_model()
+                input_tokens = result['token_usage'].get('input_tokens', 0)
+                output_tokens = result['token_usage'].get('output_tokens', 0)
+
+                # Record token usage
+                self.token_counter.add_tokens(
+                    user_email=user_email,
+                    model_name=model_name,
+                    input_tokens=input_tokens,
+                    output_tokens=output_tokens
+                )
+
+                print(
+                    f"Recorded token usage for {user_email}: {input_tokens} input, {output_tokens} output tokens with model {model_name}")
+
             return result
         except Exception as e:
             st.error(f"❌ Analysis failed: {str(e)}")
@@ -186,7 +401,8 @@ class StreamlitOdooGAPApp:
 
     def run_analysis(self, requirement_text: str):
         """Run the analysis with progress indication."""
-        progress_bar = st.progress(0, text="Starting analysis...")
+        current_model = self.analyst.get_current_model()
+        progress_bar = st.progress(0, text=f"Starting analysis with {current_model}...")
 
         try:
             # Update progress
@@ -210,20 +426,22 @@ class StreamlitOdooGAPApp:
             progress_bar.empty()
 
             if result:
-                # Store in session state and history
+                # Store in session state and user-specific history
                 analysis_data = {
                     'requirement': requirement_text,
                     'result': result,
-                    'timestamp': time.strftime("%Y-%m-%d %H:%M:%S")
+                    'timestamp': time.strftime("%Y-%m-%d %H:%M:%S"),
+                    'model_used': current_model  # Store model used for this analysis
                 }
 
                 st.session_state.current_analysis = analysis_data
-                st.session_state.analysis_history.append(analysis_data)
 
-                # Keep only last 10 analyses
-                if len(st.session_state.analysis_history) > 10:
-                    st.session_state.analysis_history = st.session_state.analysis_history[
-                                                        -10:]
+                # Save to user-specific history
+                current_user_email = self.get_current_user_email()
+                if current_user_email:
+                    analysis_id = self.analysis_history.add_analysis(current_user_email,
+                                                                     analysis_data)
+                    print(f"Saved analysis {analysis_id} for user {current_user_email}")
 
                 return True
 
@@ -242,6 +460,25 @@ class StreamlitOdooGAPApp:
         response = result.get('response', {})
         analysis_result = response.get('analysis_result', {})
 
+        # Show analysis metadata
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            st.metric("📅 Analysis Date", analysis_data.get('timestamp', 'Unknown'))
+
+        with col2:
+            model_used = analysis_data.get('model_used') or response.get('model_used',
+                                                                         'Unknown')
+            st.metric("🤖 Model Used", model_used)
+
+        with col3:
+            current_user_email = self.get_current_user_email()
+            if current_user_email:
+                user_stats = self.analysis_history.get_user_stats(current_user_email)
+                st.metric("📊 Your Total Analyses", user_stats['total_analyses'])
+
+        st.divider()
+
         # Create tabs for different sections
         tab1, tab2, tab3, tab4 = st.tabs(
             ["📋 GAP Analysis", "⏱️ Time Estimation", "🔧 Design Solution", "📚 Sources"])
@@ -258,276 +495,291 @@ class StreamlitOdooGAPApp:
         with tab4:
             self.render_sources_tab(result.get('sources', []))
 
-    def render_gap_analysis_tab(self, analysis_result: Dict[str, Any], response: Dict[str, Any]):
-        """Render the GAP analysis tab."""
+    def render_gap_analysis_tab(self, analysis_result: Dict, response: Dict):
+        """Render the GAP analysis tab content."""
         if not analysis_result:
-            st.warning("No analysis result available")
+            st.warning("No GAP analysis results available.")
             return
-        
-        # Top row with implementation type and confidence
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            # Implementation type with colored badge
-            impl_type = response.get('implementation_type', 'unknown').lower()
-            if 'development' in impl_type:
-                st.error(f"🔧 **Implementation Type:** Custom Development")
-            elif 'configuration' in impl_type:
-                st.success(f"⚙️ **Implementation Type:** Odoo Configuration")
-            else:
-                st.info(f"❓ **Implementation Type:** {impl_type.title()}")
-        
-        with col2:
-            # GAP Analysis confidence score
-            confidence_score = analysis_result.get('confidence_score', 0)
-            if confidence_score >= 0.8:
-                confidence_color = "🟢"
-                confidence_text = "High"
-            elif confidence_score >= 0.6:
-                confidence_color = "🟡" 
-                confidence_text = "Medium"
-            else:
-                confidence_color = "🔴"
-                confidence_text = "Low"
-            
-            st.metric(
-                "🎯 Analysis Confidence", 
-                f"{confidence_color} {confidence_text}",
-                delta=f"{confidence_score:.2f}"
-            )
-        
+
+        # Implementation Type Badge
+        implementation_type = response.get('implementation_type', 'Unknown')
+        if 'development' in implementation_type.lower():
+            st.error(f"🔧 **Implementation Type:** {implementation_type}")
+        else:
+            st.success(f"⚙️ **Implementation Type:** {implementation_type}")
+
+        # Confidence Score
+        confidence_score = analysis_result.get('confidence_score', 0)
+        if confidence_score >= 0.8:
+            st.success(f"✅ **Confidence Score:** {confidence_score:.2f} (High)")
+        elif confidence_score >= 0.6:
+            st.warning(f"⚠️ **Confidence Score:** {confidence_score:.2f} (Medium)")
+        else:
+            st.error(f"❌ **Confidence Score:** {confidence_score:.2f} (Low)")
+
         st.divider()
-        
-        # Executive Summary
-        if 'executive_summary' in analysis_result:
-            st.subheader("📝 Executive Summary")
-            st.write(analysis_result['executive_summary'])
-        
-        # Recommendations
-        if 'recommendations' in analysis_result:
-            st.subheader("💡 Recommendations")
-            st.write(analysis_result['recommendations'])
-        
-        # Implementation Steps
-        if 'implementation_steps' in analysis_result:
-            st.subheader("📋 Implementation Steps")
-            st.write(analysis_result['implementation_steps'])
-    
-    def render_estimation_tab(self, estimation: Dict[str, Any]):
-        """Render the time estimation tab."""
-        if 'error' in estimation:
-            st.error(f"❌ Estimation Error: {estimation['error']}")
+
+        # Analysis sections
+        sections = [
+            ("📋 Executive Summary",
+             analysis_result.get('executive_summary', 'Not available')),
+            ("💡 Recommendations",
+             analysis_result.get('recommendations', 'Not available')),
+            ("📝 Implementation Steps",
+             analysis_result.get('implementation_steps', 'Not available'))
+        ]
+
+        for title, content in sections:
+            st.subheader(title)
+            st.write(content)
+            st.markdown("---")
+
+    def render_estimation_tab(self, estimation_data: Dict):
+        """Render the time estimation tab content."""
+        if not estimation_data or 'error' in estimation_data:
+            st.warning("No time estimation available or estimation failed.")
+            if 'error' in estimation_data:
+                st.error(f"Error: {estimation_data['error']}")
             return
-        
-        if not estimation:
-            st.info("💡 No time estimation available.")
-            return
-        
-        # Main estimation summary
+
+        # Main estimation metrics
         col1, col2, col3 = st.columns(3)
-        
+
         with col1:
-            st.metric(
-                "⏱️ Total Time", 
-                estimation.get('total_estimation_hours', 'N/A')
-            )
-        
+            total_hours = estimation_data.get('total_estimation_hours', 'Not specified')
+            st.metric("⏱️ Total Estimation", total_hours)
+
         with col2:
-            # Estimation confidence (separate from GAP analysis confidence)
-            confidence = estimation.get('confidence_level', 'Unknown')
-            confidence_score = estimation.get('confidence_score', 0)
-            confidence_color = {
-                'High': '🟢', 
-                'Medium': '🟡', 
-                'Low': '🔴'
-            }.get(confidence, '⚪')
-            st.metric(
-                "🎯 Estimation Confidence", 
-                f"{confidence_color} {confidence}",
-                delta=f"{confidence_score:.2f}" if confidence_score else None
-            )
-        
+            complexity = estimation_data.get('complexity_rating', 'Unknown')
+            if complexity.lower() == 'complex':
+                st.error(f"🔴 Complexity: {complexity}")
+            elif complexity.lower() == 'medium':
+                st.warning(f"🟡 Complexity: {complexity}")
+            else:
+                st.success(f"🟢 Complexity: {complexity}")
+
         with col3:
-            complexity = estimation.get('complexity_rating', 'Unknown')
-            complexity_color = {
-                'Simple': '🟢',
-                'Medium': '🟡', 
-                'Complex': '🔴'
-            }.get(complexity, '⚪')
-            st.metric(
-                "⚙️ Complexity", 
-                f"{complexity_color} {complexity}"
-            )
-        
+            confidence = estimation_data.get('confidence_level', 'Unknown')
+            confidence_score = estimation_data.get('confidence_score', 0)
+            if confidence_score >= 0.8:
+                st.success(f"✅ Confidence: {confidence}")
+            elif confidence_score >= 0.6:
+                st.warning(f"⚠️ Confidence: {confidence}")
+            else:
+                st.error(f"❌ Confidence: {confidence}")
+
         st.divider()
-        
-        # Detailed breakdown
-        if 'breakdown' in estimation:
-            st.subheader("📋 Time Breakdown")
-            breakdown = estimation['breakdown']
-            
-            for phase, details in breakdown.items():
-                with st.expander(f"🔹 {phase.replace('_', ' ').title()}", expanded=True):
-                    st.write(details)
-        
+
+        # Breakdown section
+        breakdown = estimation_data.get('breakdown', {})
+        if breakdown:
+            st.subheader("📊 Time Breakdown")
+
+            phases = [
+                ("🔍 Analysis Phase", breakdown.get('analysis_phase', 'Not specified')),
+                ("⚙️ Development Phase",
+                 breakdown.get('development_phase', 'Not specified')),
+                ("🧪 Testing Phase", breakdown.get('testing_phase', 'Not specified')),
+                ("🚀 Deployment Phase",
+                 breakdown.get('deployment_phase', 'Not specified'))
+            ]
+
+            for phase_title, phase_content in phases:
+                with st.expander(phase_title, expanded=False):
+                    st.write(phase_content)
+
         # Additional information
         col1, col2 = st.columns(2)
-        
+
         with col1:
-            if 'risk_factors' in estimation and estimation['risk_factors']:
+            # Risk factors
+            risk_factors = estimation_data.get('risk_factors', [])
+            if risk_factors:
                 st.subheader("⚠️ Risk Factors")
-                for risk in estimation['risk_factors']:
+                for risk in risk_factors:
                     st.write(f"• {risk}")
-        
+
         with col2:
-            if 'assumptions' in estimation and estimation['assumptions']:
-                st.subheader("📝 Assumptions")
-                for assumption in estimation['assumptions']:
+            # Assumptions
+            assumptions = estimation_data.get('assumptions', [])
+            if assumptions:
+                st.subheader("📋 Assumptions")
+                for assumption in assumptions:
                     st.write(f"• {assumption}")
-        
-        # Recommended approach
-        if 'recommended_approach' in estimation:
-            st.subheader("🎯 Recommended Approach")
-            st.info(estimation['recommended_approach'])
-        
-        # Skill level required
-        if 'skill_level_required' in estimation:
-            st.subheader("👨‍💻 Required Skill Level")
-            skill_level = estimation['skill_level_required']
-            skill_color = {
-                'Junior': '🟢',
-                'Mid': '🟡',
-                'Senior': '🔴'
-            }.get(skill_level, '⚪')
-            st.write(f"{skill_color} **{skill_level} Developer**")
 
-    def render_design_solution_tab(self, response: Dict[str, Any]):
-        """Render the design solution tab."""
-        if 'design_solution' in response:
-            st.subheader("🏗️ Technical Design Solution")
-            st.markdown(response['design_solution'])
-        else:
+            # Recommended approach
+            recommended_approach = estimation_data.get('recommended_approach', '')
+            if recommended_approach:
+                st.subheader("🎯 Recommended Approach")
+                st.write(recommended_approach)
+
+    def render_design_solution_tab(self, response: Dict):
+        """Render the design solution tab content."""
+        design_solution = response.get('design_solution')
+
+        if not design_solution:
             st.info(
-                "💡 Design solution is generated only for custom development requirements.")
-
-    def render_sources_tab(self, sources: list):
-        """Render the sources tab."""
-        if not sources:
-            st.info("No sources were referenced during this analysis.")
+                "No design solution available. Design solutions are generated only for development requirements.")
             return
 
-        st.subheader("📚 Referenced Sources")
+        st.subheader("🏗️ Technical Design Solution")
+        st.markdown(design_solution)
+
+    def render_sources_tab(self, sources: list):
+        """Render the sources tab content."""
+        if not sources:
+            st.warning("No sources available.")
+            return
+
+        st.subheader("📚 Knowledge Base Sources")
+        st.write("The following sources were used to generate this analysis:")
 
         for i, source in enumerate(sources, 1):
-            with st.expander(
-                    f"📄 Source {i}: {source.get('metadata', {}).get('title', 'Unknown')}",
-                    expanded=False):
-                content = source.get('content', 'No content available')
-                metadata = source.get('metadata', {})
+            metadata = source.get('metadata', {})
+            title = metadata.get('title', f'Source {i}')
+            content = source.get('content', 'No content available')
 
+            with st.expander(f"📄 {title}", expanded=False):
                 st.write("**Content:**")
                 st.write(content)
 
-                if metadata:
-                    st.write("**Metadata:**")
-                    col1, col2 = st.columns(2)
-
-                    with col1:
-                        if 'source' in metadata:
-                            st.write(f"**File:** {metadata['source']}")
-
-                    with col2:
-                        if 'page' in metadata and metadata['page']:
-                            st.write(f"**Page:** {metadata['page']}")
+                # Show source metadata if available
+                source_path = metadata.get('source', 'Unknown')
+                page = metadata.get('page', 'N/A')
+                if source_path != 'Unknown':
+                    st.write(f"**Source:** {source_path}")
+                if page != 'N/A':
+                    st.write(f"**Page:** {page}")
 
     def render_export_options(self, analysis_data: Dict[str, Any]):
         """Render export options for the analysis results."""
-        st.header("📤 Export Results")
+        st.header("📤 Export Options")
 
-        col1, col2 = st.columns(2)
+        col1, col2, col3 = st.columns(3)
 
         with col1:
-            # Export as JSON
-            json_data = json.dumps(analysis_data, indent=2, ensure_ascii=False)
-            st.download_button(
-                label="📄 Download as JSON",
-                data=json_data,
-                file_name=f"gap_analysis_{int(time.time())}.json",
-                mime="application/json"
-            )
+            # JSON export
+            if st.button("📄 Export as JSON", type="secondary"):
+                json_data = json.dumps(analysis_data, indent=2, ensure_ascii=False)
+                st.download_button(
+                    label="💾 Download JSON",
+                    data=json_data,
+                    file_name=f"gap_analysis_{time.strftime('%Y%m%d_%H%M%S')}.json",
+                    mime="application/json"
+                )
 
         with col2:
-            # Export as text summary
-            text_summary = self.generate_text_summary(analysis_data)
-            st.download_button(
-                label="📝 Download as Text",
-                data=text_summary,
-                file_name=f"gap_analysis_{int(time.time())}.txt",
-                mime="text/plain"
-            )
+            # Text summary export
+            if st.button("📝 Export as Text", type="secondary"):
+                text_summary = self.generate_text_summary(analysis_data)
+                st.download_button(
+                    label="💾 Download Text",
+                    data=text_summary,
+                    file_name=f"gap_analysis_{time.strftime('%Y%m%d_%H%M%S')}.txt",
+                    mime="text/plain"
+                )
+
+        with col3:
+            # Copy to clipboard (show the text)
+            if st.button("📋 Show Text Summary", type="secondary"):
+                st.text_area(
+                    "Copy this text:",
+                    value=self.generate_text_summary(analysis_data),
+                    height=200
+                )
 
     def generate_text_summary(self, analysis_data: Dict[str, Any]) -> str:
-        """Generate a text summary of the analysis."""
+        """Generate a text summary of the analysis results."""
         result = analysis_data['result']
         response = result.get('response', {})
         analysis_result = response.get('analysis_result', {})
-        estimation = response.get('time_estimation', {})
 
-        summary = f"""
-ODOO GAP ANALYSIS REPORT
-========================
+        summary_parts = [
+            "=" * 60,
+            "ODOO GAP ANALYSIS REPORT",
+            "=" * 60,
+            "",
+            f"Analysis Date: {analysis_data.get('timestamp', 'Unknown')}",
+            f"Model Used: {analysis_data.get('model_used', 'Unknown')}",
+            "",
+            "BUSINESS REQUIREMENT:",
+            "-" * 20,
+            analysis_data.get('requirement', 'Not available'),
+            "",
+            "ANALYSIS RESULTS:",
+            "-" * 17,
+            f"Implementation Type: {response.get('implementation_type', 'Unknown')}",
+            f"Confidence Score: {analysis_result.get('confidence_score', 0):.2f}",
+            "",
+            "EXECUTIVE SUMMARY:",
+            "-" * 18,
+            analysis_result.get('executive_summary', 'Not available'),
+            "",
+            "RECOMMENDATIONS:",
+            "-" * 16,
+            analysis_result.get('recommendations', 'Not available'),
+            "",
+            "IMPLEMENTATION STEPS:",
+            "-" * 21,
+            analysis_result.get('implementation_steps', 'Not available'),
+            ""
+        ]
 
-Timestamp: {analysis_data.get('timestamp', 'Unknown')}
-Business Requirement: {analysis_data.get('requirement', 'Unknown')}
+        # Add time estimation if available
+        estimation_data = response.get('time_estimation', {})
+        if estimation_data and 'error' not in estimation_data:
+            summary_parts.extend([
+                "TIME ESTIMATION:",
+                "-" * 16,
+                f"Total Hours: {estimation_data.get('total_estimation_hours', 'Not specified')}",
+                f"Complexity: {estimation_data.get('complexity_rating', 'Unknown')}",
+                f"Confidence: {estimation_data.get('confidence_level', 'Unknown')}",
+            ])
 
-ANALYSIS RESULTS
-================
+            # Add breakdown if available
+            breakdown = estimation_data.get('breakdown', {})
+            if breakdown:
+                summary_parts.extend([
+                    "BREAKDOWN:",
+                    "-" * 10,
+                    f"Analysis: {breakdown.get('analysis_phase', 'Not specified')}",
+                    f"Development: {breakdown.get('development_phase', 'Not specified')}",
+                    f"Testing: {breakdown.get('testing_phase', 'Not specified')}",
+                    f"Deployment: {breakdown.get('deployment_phase', 'Not specified')}",
+                    ""
+                ])
 
-Implementation Type: {response.get('implementation_type', 'Unknown')}
+        # Add design solution if available
+        design_solution = response.get('design_solution')
+        if design_solution:
+            summary_parts.extend([
+                "DESIGN SOLUTION:",
+                "-" * 16,
+                design_solution,
+                ""
+            ])
 
-Executive Summary:
-{analysis_result.get('executive_summary', 'N/A')}
+        summary_parts.extend([
+            "=" * 60,
+            "End of Report",
+            "=" * 60
+        ])
 
-Recommendations:
-{analysis_result.get('recommendations', 'N/A')}
-
-Implementation Steps:
-{analysis_result.get('implementation_steps', 'N/A')}
-
-TIME ESTIMATION
-===============
-
-Total Time: {estimation.get('total_estimation_hours', 'N/A')}
-Confidence Level: {estimation.get('confidence_level', 'N/A')}
-Complexity Rating: {estimation.get('complexity_rating', 'N/A')}
-Required Skill Level: {estimation.get('skill_level_required', 'N/A')}
-
-Breakdown:
-{json.dumps(estimation.get('breakdown', {}), indent=2)}
-
-Risk Factors:
-{chr(10).join(f"- {risk}" for risk in estimation.get('risk_factors', []))}
-
-Assumptions:
-{chr(10).join(f"- {assumption}" for assumption in estimation.get('assumptions', []))}
-
-Recommended Approach:
-{estimation.get('recommended_approach', 'N/A')}
-"""
-
-        if 'design_solution' in response:
-            summary += f"""
-
-DESIGN SOLUTION
-===============
-
-{response['design_solution']}
-"""
-
-        return summary
+        return "\n".join(summary_parts)
 
     def run(self):
         """Main application runner."""
+        # Check if user is logged in
+        authenticated, login_manager = render_login_ui()
+
+        # Store login_manager for use in other methods
+        self.login_manager = login_manager
+
+        if not authenticated:
+            # User is not logged in or is in admin panel
+            return
+
+        # User is authenticated, proceed with the main application
         self.render_header()
         self.render_sidebar()
 
@@ -546,3 +798,9 @@ DESIGN SOLUTION
 
             st.divider()
             self.render_export_options(st.session_state.current_analysis)
+
+
+# Entry point for the Streamlit app
+if __name__ == "__main__":
+    app = StreamlitOdooGAPApp()
+    app.run()

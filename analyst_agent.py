@@ -7,15 +7,13 @@ from langchain_community.document_loaders import PyPDFLoader, TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import Chroma
 from langchain_openai import OpenAIEmbeddings
-import asyncio
 import json
 import glob
+import tiktoken  # Add this import for token counting
 
 from estimation_agent import OdooEstimationAgent
 
 load_dotenv()
-
-endpoint_azure = "https://models.inference.ai.azure.com"
 
 
 class OdooGAPAnalyst:
@@ -26,13 +24,27 @@ class OdooGAPAnalyst:
     agent creation, and analysis execution for Odoo customization requirements.
     """
 
-    def __init__(self, data_directory="./data", db_directory="./chroma_db"):
+    # Available OpenAI models
+    AVAILABLE_MODELS = {
+        'gpt-4': 'GPT-4 (Original)',
+        'gpt-4-turbo': 'GPT-4 Turbo (Latest)',
+        'gpt-4-turbo-preview': 'GPT-4 Turbo Preview',
+        'gpt-4o': 'GPT-4o (Omni)',
+        'gpt-4o-mini': 'GPT-4o Mini (Cost-effective)',
+        'gpt-4o-nano': 'GPT-4o Nano (Most Cost-effective)',
+        'gpt-3.5-turbo': 'GPT-3.5 Turbo (Fast & Cost-effective)',
+        'gpt-3.5-turbo-16k': 'GPT-3.5 Turbo 16k (Extended context)'
+    }
+
+    def __init__(self, data_directory="./data", db_directory="./chroma_db",
+                 model_name=None):
         """
         Initialize the Odoo GAP Analyst.
 
         Args:
             data_directory (str): Directory containing PDF and TXT files
             db_directory (str): Directory for the vector database
+            model_name (str): OpenAI model to use (optional, defaults to gpt-4o-nano)
         """
         self.data_directory = data_directory
         self.db_directory = db_directory
@@ -40,15 +52,16 @@ class OdooGAPAnalyst:
         self.search_tool = None
         self.estimation_agent = None
 
-        # Initialize OpenAI settings
-        self.token = os.getenv("OPENAI_KEY")
-        self.endpoint = 'https://models.github.ai/inference'
-        self.model_name = 'openai/gpt-4.1-nano'
-        self.endpoint_azure = "https://models.inference.ai.azure.com"
+        # Initialize OpenAI settings for standard API
+        self.token = os.getenv("OPENAI_API_KEY")
+        if not self.token:
+            raise ValueError("OPENAI_API_KEY environment variable is required")
 
-        # Setup OpenAI client
+        # Set model name with validation
+        self.model_name = self._validate_and_set_model(model_name)
+
+        # Setup OpenAI client for standard API
         self.client = AsyncOpenAI(
-            base_url=self.endpoint,
             api_key=self.token
         )
 
@@ -58,7 +71,91 @@ class OdooGAPAnalyst:
             openai_client=self.client,
         )
 
+        # Initialize tokenizer for counting tokens
+        try:
+            self.tokenizer = tiktoken.encoding_for_model(self.model_name)
+        except KeyError:
+            # Fallback to cl100k_base for unknown models
+            self.tokenizer = tiktoken.get_encoding("cl100k_base")
+
         set_tracing_disabled(True)
+
+    def _count_tokens(self, text: str) -> int:
+        """Count tokens in a text string using tiktoken."""
+        try:
+            return len(self.tokenizer.encode(text))
+        except Exception:
+            # Fallback: rough estimation (4 chars = 1 token)
+            return len(text) // 4
+
+    def _validate_and_set_model(self, model_name):
+        """
+        Validate and set the model name.
+
+        Args:
+            model_name (str): Model name to validate
+
+        Returns:
+            str: Validated model name
+        """
+        if model_name is None:
+            # Default model
+            return 'gpt-4o-nano'
+
+        if model_name not in self.AVAILABLE_MODELS:
+            print(f"Warning: Model '{model_name}' is not in the list of known models.")
+            print("Available models:")
+            for model, description in self.AVAILABLE_MODELS.items():
+                print(f"  - {model}: {description}")
+            print(f"Using '{model_name}' anyway...")
+
+        return model_name
+
+    @classmethod
+    def list_available_models(cls):
+        """
+        List all available OpenAI models.
+
+        Returns:
+            dict: Dictionary of available models with descriptions
+        """
+        return cls.AVAILABLE_MODELS
+
+    def get_current_model(self):
+        """
+        Get the currently selected model.
+
+        Returns:
+            str: Current model name
+        """
+        return self.model_name
+
+    def set_model(self, model_name):
+        """
+        Change the model at runtime.
+
+        Args:
+            model_name (str): New model name to use
+        """
+        self.model_name = self._validate_and_set_model(model_name)
+
+        # Update the model instance
+        self.model_instance = OpenAIChatCompletionsModel(
+            model=self.model_name,
+            openai_client=self.client,
+        )
+
+        # Update tokenizer
+        try:
+            self.tokenizer = tiktoken.encoding_for_model(self.model_name)
+        except KeyError:
+            # Fallback to cl100k_base for unknown models
+            self.tokenizer = tiktoken.get_encoding("cl100k_base")
+
+        # Reset estimation agent to use new model
+        self.estimation_agent = None
+
+        print(f"Model changed to: {self.model_name}")
 
     def load_data_to_database(self):
         """
@@ -68,10 +165,9 @@ class OdooGAPAnalyst:
             Chroma: Vector store instance or None if failed
         """
         try:
-            # Initialize embeddings - use standard OpenAI endpoint for embeddings
+            # Initialize embeddings - use standard OpenAI API
             embeddings = OpenAIEmbeddings(
                 model="text-embedding-3-large",
-                base_url=self.endpoint_azure,
                 api_key=self.token
             )
 
@@ -315,8 +411,21 @@ class OdooGAPAnalyst:
         Note: Time estimation will be handled separately by a specialized estimation agent.
         """
 
+        # Count input tokens
+        input_tokens = self._count_tokens(design_prompt)
+
         design_result = await Runner.run(design_agent, design_prompt)
-        return design_result.final_output
+
+        # Count output tokens
+        output_tokens = self._count_tokens(design_result.final_output)
+
+        # Store token usage in the result
+        design_result.token_usage = {
+            'input_tokens': input_tokens,
+            'output_tokens': output_tokens
+        }
+
+        return design_result
 
     def get_sources_from_search(self):
         """
@@ -359,8 +468,11 @@ class OdooGAPAnalyst:
             user_requirement (str): The business requirement to analyze
 
         Returns:
-            dict: Complete analysis result with sources and estimation
+            dict: Complete analysis result with sources, estimation, and token usage
         """
+        # Print current model being used
+        print(f"Using OpenAI model: {self.model_name}")
+
         # Ensure everything is set up
         if not self.vstore:
             print("Loading PDF data to vector database...")
@@ -372,9 +484,25 @@ class OdooGAPAnalyst:
         if not self.search_tool:
             self.create_search_tool()
 
+        # Initialize token counters
+        input_tokens = 0
+        output_tokens = 0
+
         # Create and run GAP analysis agent
         agent = self.create_gap_analysis_agent()
+
+        # Count input tokens for the prompt
+        analysis_input_tokens = self._count_tokens(user_requirement)
+        input_tokens += analysis_input_tokens
+
         result = await Runner.run(agent, user_requirement)
+
+        # Count output tokens from GAP analysis
+        analysis_output_tokens = self._count_tokens(result.final_output)
+        output_tokens += analysis_output_tokens
+
+        print(
+            f"GAP Analysis tokens: {analysis_input_tokens} input, {analysis_output_tokens} output")
 
         print("=== GAP Analysis Result ===")
         print(result.final_output)
@@ -392,6 +520,7 @@ class OdooGAPAnalyst:
         response_data = {
             "analysis_result": analysis_result,
             "implementation_type": implementation_type,
+            "model_used": self.model_name  # Include model info in response
         }
 
         # Get time estimation from specialized agent
@@ -401,6 +530,13 @@ class OdooGAPAnalyst:
             user_requirement,
             implementation_type
         )
+        # Track tokens from estimation
+        if isinstance(estimation_result, dict) and "token_usage" in estimation_result:
+            estimation_usage = estimation_result["token_usage"]
+            input_tokens += estimation_usage.get('input_tokens', 0)
+            output_tokens += estimation_usage.get('output_tokens', 0)
+            print(
+                f"Estimation tokens: {estimation_usage.get('input_tokens', 0)} input, {estimation_usage.get('output_tokens', 0)} output")
 
         if estimation_result["status"] == "success":
             response_data["time_estimation"] = estimation_result["estimation"]
@@ -417,10 +553,32 @@ class OdooGAPAnalyst:
             print("\n=== Creating Design Solution ===")
             print("Implementation type is 'development'. Generating design solution...")
 
-            design_solution = await self.create_design_solution(user_requirement)
-            response_data["design_solution"] = design_solution
+            design_result = await self.create_design_solution(user_requirement)
+
+            if hasattr(design_result, 'final_output'):
+                response_data["design_solution"] = design_result.final_output
+            else:
+                response_data["design_solution"] = str(design_result)
+
+            # Track tokens from design solution
+            if hasattr(design_result, 'token_usage'):
+                design_usage = design_result.token_usage
+                input_tokens += design_usage.get('input_tokens', 0)
+                output_tokens += design_usage.get('output_tokens', 0)
+                print(
+                    f"Design solution tokens: {design_usage.get('input_tokens', 0)} input, {design_usage.get('output_tokens', 0)} output")
+
+        # Add token usage to response
+        token_usage = {
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens,
+            "total_tokens": input_tokens + output_tokens
+        }
+
+        print(f"Total token usage: {input_tokens} input, {output_tokens} output")
 
         return {
             "response": response_data,
-            "sources": self.get_sources_from_search()
+            "sources": self.get_sources_from_search(),
+            "token_usage": token_usage
         }

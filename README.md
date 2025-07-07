@@ -46,7 +46,7 @@ The application can:
 
 3. Install the required dependencies:
    ```bash
-   pip install streamlit openai langchain langchain-openai langchain-community python-dotenv chromadb openai-agents pypdf
+   pip install streamlit openai langchain langchain-openai langchain-community python-dotenv chromadb openai-agents pypdf tiktoken
 
    ```
 

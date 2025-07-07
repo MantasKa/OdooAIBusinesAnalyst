@@ -1,27 +1,12 @@
-import os
-from agents import Agent, ModelSettings, OpenAIChatCompletionsModel, Runner, \
-    function_tool, set_tracing_disabled
-from openai import AsyncOpenAI
-from dotenv import load_dotenv
-from langchain_community.document_loaders import PyPDFLoader, TextLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.vectorstores import Chroma
-from langchain_openai import OpenAIEmbeddings
-import asyncio
 import json
-import glob
-
-load_dotenv()
-
-endpoint_azure = "https://models.inference.ai.azure.com"
+import re
+import tiktoken
+from agents import Agent, ModelSettings, OpenAIChatCompletionsModel, Runner
 
 
 class OdooEstimationAgent:
     """
-    Specialized agent for providing time and cost estimations for Odoo projects.
-
-    This agent focuses specifically on analyzing requirements and providing
-    detailed time estimations, cost breakdowns, and resource planning.
+    Specialized agent for providing detailed time estimations for Odoo requirements.
     """
 
     def __init__(self, model_instance, search_tool=None):
@@ -29,58 +14,81 @@ class OdooEstimationAgent:
         Initialize the estimation agent.
 
         Args:
-            model_instance: The AI model instance to use
-            search_tool: Optional search tool for accessing documentation
+            model_instance: The OpenAI model instance to use
+            search_tool: Optional search tool for accessing knowledge base
         """
         self.model_instance = model_instance
         self.search_tool = search_tool
-        self.agent = self._create_agent()
 
-    def _create_agent(self):
-        """Create the specialized estimation agent."""
-        tools = [self.search_tool] if self.search_tool else []
+        # Initialize tokenizer
+        try:
+            model_name = getattr(model_instance, 'model', 'gpt-4o-nano')
+            self.tokenizer = tiktoken.encoding_for_model(model_name)
+        except (KeyError, AttributeError):
+            # Fallback to cl100k_base for unknown models
+            self.tokenizer = tiktoken.get_encoding("cl100k_base")
 
-        return Agent(
-            name="OdooEstimationExpert",
-            instructions="""You are a senior Odoo estimation expert with extensive experience in project planning and time estimation.
+        # Create the agent
+        tools = [search_tool] if search_tool else []
+        self.agent = Agent(
+            name="EstimationSpecialist",
+            instructions="""You are a senior Odoo consultant specializing in accurate time estimation.
+            You have extensive experience with Odoo implementations and can provide detailed,
+            realistic time estimates for various types of requirements.
 
-            Your expertise includes:
-            - Odoo module development and customization
-            - Database schema modifications
-            - API integrations and third-party connections
-            - User interface development
-            - Testing and quality assurance
-            - Deployment and maintenance considerations
+            When providing estimates:
+            1. Break down the work into phases (Analysis, Development, Testing, Deployment)
+            2. Consider complexity factors and potential risks
+            3. Include confidence levels and assumptions
+            4. Provide skill level recommendations
+            5. Always respond with valid JSON format
 
-            When providing estimations:
-            1. Break down the work into detailed components
-            2. Consider complexity factors (simple, medium, complex)
-            3. Include time for testing, debugging, and documentation
-            4. Account for potential risks and challenges
-            5. Provide realistic time ranges with justifications
-            6. Provide confidence level as decimal between 0 and 1 (0=very uncertain, 1=very certain)
-
-            IMPORTANT: Always respond with valid JSON in this exact format:
+            Expected JSON format:
             {
                 "total_estimation_hours": "X-Y hours",
                 "confidence_level": "High/Medium/Low",
                 "confidence_score": 0.85,
+                "complexity_rating": "Simple/Medium/Complex",
                 "breakdown": {
-                    "development": "X hours - Description", 
-                    "testing": "X hours - Description",
-                    "documentation": "X hours - Description",
-                    "deployment": "X hours - Description"
+                    "analysis_phase": "description and hours",
+                    "development_phase": "description and hours",
+                    "testing_phase": "description and hours",
+                    "deployment_phase": "description and hours"
                 },
                 "risk_factors": ["risk1", "risk2"],
                 "assumptions": ["assumption1", "assumption2"],
-                "complexity_rating": "Simple/Medium/Complex",
-                "recommended_approach": "Brief description of recommended implementation approach"
+                "recommended_approach": "description",
             }
             """,
             model=self.model_instance,
             model_settings=ModelSettings(temperature=0.1),
             tools=tools
         )
+
+    def _count_tokens(self, text: str) -> int:
+        """Count tokens in a text string using tiktoken."""
+        try:
+            return len(self.tokenizer.encode(text))
+        except Exception:
+            # Fallback: rough estimation (4 chars = 1 token)
+            return len(text) // 4
+
+    def _clean_markdown_codeblocks(self, text: str) -> str:
+        """
+        Remove markdown code block formatting from text.
+
+        Args:
+            text (str): Text that may contain markdown code blocks
+
+        Returns:
+            str: Cleaned text with markdown formatting removed
+        """
+        # Remove ```json and ``` markers
+        pattern = r'```(?:json)?\n(.*?)```'
+        match = re.search(pattern, text, re.DOTALL)
+        if match:
+            return match.group(1).strip()
+        return text
 
     async def estimate_requirement(self, requirement: str,
                                    implementation_type: str = "unknown") -> dict:
@@ -113,14 +121,28 @@ class OdooEstimationAgent:
         """
 
         try:
+            # Count input tokens
+            input_tokens = self._count_tokens(estimation_prompt)
+
             result = await Runner.run(self.agent, estimation_prompt)
 
-            # Parse JSON response
-            estimation_result = json.loads(result.final_output)
+            # Count output tokens
+            output_tokens = self._count_tokens(result.final_output)
+
+            print(
+                f"Estimation agent tokens: {input_tokens} input, {output_tokens} output")
+
+            # Clean markdown formatting and parse JSON response
+            cleaned_output = self._clean_markdown_codeblocks(result.final_output)
+            estimation_result = json.loads(cleaned_output)
             return {
                 "status": "success",
                 "estimation": estimation_result,
-                "raw_output": result.final_output
+                "raw_output": result.final_output,
+                "token_usage": {
+                    "input_tokens": input_tokens,
+                    "output_tokens": output_tokens
+                }
             }
 
         except json.JSONDecodeError:
@@ -133,46 +155,5 @@ class OdooEstimationAgent:
             return {
                 "status": "error",
                 "message": f"Estimation failed: {str(e)}",
-                "raw_output": ""
-            }
-
-    async def refine_estimation(self, original_estimation: dict,
-                                additional_context: str) -> dict:
-        """
-        Refine an existing estimation with additional context.
-
-        Args:
-            original_estimation (dict): The original estimation result
-            additional_context (str): Additional information to consider
-
-        Returns:
-            dict: Refined estimation
-        """
-        refinement_prompt = f"""
-        Refine this existing estimation with additional context:
-
-        Original Estimation: {json.dumps(original_estimation, indent=2)}
-
-        Additional Context: "{additional_context}"
-
-        Update the estimation considering this new information. Adjust time estimates, 
-        risk factors, assumptions, and confidence_score as needed.
-        """
-
-        try:
-            result = await Runner.run(self.agent, refinement_prompt)
-            refined_estimation = json.loads(result.final_output)
-
-            return {
-                "status": "success",
-                "estimation": refined_estimation,
-                "refinement_notes": additional_context,
-                "raw_output": result.final_output
-            }
-
-        except Exception as e:
-            return {
-                "status": "error",
-                "message": f"Estimation refinement failed: {str(e)}",
                 "raw_output": ""
             }
