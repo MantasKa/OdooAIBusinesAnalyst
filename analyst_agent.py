@@ -26,14 +26,13 @@ class OdooGAPAnalyst:
 
     # Available OpenAI models
     AVAILABLE_MODELS = {
-        'gpt-4': 'GPT-4 (Original)',
-        'gpt-4-turbo': 'GPT-4 Turbo (Latest)',
-        'gpt-4-turbo-preview': 'GPT-4 Turbo Preview',
-        'gpt-4o': 'GPT-4o (Omni)',
-        'gpt-4o-mini': 'GPT-4o Mini (Cost-effective)',
-        'gpt-4o-nano': 'GPT-4o Nano (Most Cost-effective)',
-        'gpt-3.5-turbo': 'GPT-3.5 Turbo (Fast & Cost-effective)',
-        'gpt-3.5-turbo-16k': 'GPT-3.5 Turbo 16k (Extended context)'
+        'gpt-4.5-preview-2025-02-27': 'GPT-4.5-Preview (Largest, 2025-02-27)',
+        'gpt-4.1-nano-2025-04-14': 'GPT-4o Nano (Most Cost-effective)',
+        'gpt-4-0613': 'GPT-4 (Original)',
+        'gpt-4-turbo-2024-04-09': 'GPT-4 Turbo',
+        'gpt-4-0125-preview': 'GPT-4 Turbo Preview',
+        'gpt-4o-2024-08-06': 'GPT-4o (Omni)',
+        'gpt-4.1-mini-2025-04-14': 'GPT-4o Mini (Cost-effective)',
     }
 
     def __init__(self, data_directory="./data", db_directory="./chroma_db",
